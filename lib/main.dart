@@ -4,6 +4,7 @@ import 'providers/auth_provider.dart';
 import 'providers/document_provider.dart';
 import 'utils/navigation_service.dart';
 import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(
@@ -29,7 +30,7 @@ class DMSApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1976D2)),
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

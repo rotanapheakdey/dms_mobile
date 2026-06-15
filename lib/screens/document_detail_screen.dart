@@ -42,29 +42,129 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   }
 
   Future<void> _handleReportUpload() async {
+    // 1. Initial File Selection Step
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx'],
     );
-    if (result != null && result.files.single.path != null) {
-      File file = File(result.files.single.path!);
-      if (await file.length() > 10485760) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('File exceeds 10MB limit'), backgroundColor: Colors.red));
-        return;
-      }
-      setState(() => context.read<DocumentProvider>().isLoading = true);
-      final uploadResult = await ApiService.uploadReport(widget.document.id, file);
-      if (!mounted) return;
-      setState(() => context.read<DocumentProvider>().isLoading = false);
+    
+    if (result == null || result.files.single.path == null) return;
 
-      if (uploadResult['error'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(uploadResult['message']), backgroundColor: Colors.red));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Action report uploaded successfully!'), backgroundColor: Colors.green));
-        await context.read<DocumentProvider>().fetchUrgentFeed();
-        Navigator.pop(context);
-      }
+    File file = File(result.files.single.path!);
+    int fileSizeBytes = await file.length();
+    double fileSizeInMB = fileSizeBytes / (1024 * 1024);
+    String fileName = result.files.single.name;
+
+    if (!mounted) return;
+
+    // 2. Hard Stop Constraint: Catch heavy files early
+    if (fileSizeBytes > 10485760) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.red),
+              SizedBox(width: 8),
+              Text('File Too Heavy'),
+            ],
+          ),
+          content: Text('The selected file "$fileName" is ${fileSizeInMB.toStringAsFixed(2)} MB.\n\nSystem security policies enforce a strict maximum limit of 10.00 MB per transmission.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go Back')),
+          ],
+        ),
+      );
+      return;
     }
+
+    final reportNoteController = TextEditingController();
+    
+    await showDialog(
+      context: context,
+      barrierDismissible: false, 
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Review Action Report'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Selected Attachment:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.picture_as_pdf, color: Colors.redAccent),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(fileName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text('${fileSizeInMB.toStringAsFixed(2)} MB / 10.00 MB', style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: reportNoteController,
+                  decoration: const InputDecoration(
+                    labelText: 'Report Description / Notes (Optional)',
+                    border: OutlineInputBorder(),
+                    hintText: 'Add an executive summary for the VDG...',
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                reportNoteController.dispose();
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.cloud_upload),
+              label: const Text('Submit to VDG'),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1976D2), foregroundColor: Colors.white),
+              onPressed: () async {
+                Navigator.pop(context); 
+                
+                setState(() => context.read<DocumentProvider>().isLoading = true);
+                
+                final uploadResult = await ApiService.uploadReport(widget.document.id, file);
+                
+                if (!mounted) return;
+                setState(() => context.read<DocumentProvider>().isLoading = false);
+                reportNoteController.dispose();
+
+                if (uploadResult['error'] == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(uploadResult['message']), backgroundColor: Colors.red));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Action report officially submitted to VDG!'), backgroundColor: Colors.green));
+                  await context.read<DocumentProvider>().fetchUrgentFeed();
+                  Navigator.pop(context);
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -72,7 +172,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     final user = context.watch<AuthProvider>().currentUser;
     final doc = widget.document;
     final isActionLoading = context.watch<DocumentProvider>().isLoading;
-
+print("DEBUG RAW DOCUMENT RELATIONSHIPS: uploader=${doc.uploader}, department=${doc.department}");
     return Scaffold(
       appBar: AppBar(title: const Text('Document Details')),
       body: Stack(

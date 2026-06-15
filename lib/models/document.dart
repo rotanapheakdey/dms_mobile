@@ -26,9 +26,9 @@ class Document {
       controlNo: json['control_no'],
       status: json['status'],
       filePath: json['file_path'],
-      createdAt: json['created_at'],
-      uploader: json['uploader'] ?? json['user'], 
-      department: json['assigned_department'] ?? json['department'],
+      createdAt: json['created_at'] ?? '',
+      uploader: json['uploader'] is Map ? json['uploader'] : null,
+      department: json['department'] is Map ? json['department'] : null,
     );
   }
 }
