@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../utils/constants.dart';
@@ -12,7 +12,11 @@ import '../screens/login_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiService {
-  static Future<Map<String, dynamic>> call(String method, String endpoint, {Map<String, dynamic>? body}) async {
+  static Future<Map<String, dynamic>> call(
+    String method,
+    String endpoint, {
+    Map<String, dynamic>? body,
+  }) async {
     final String url = '${AppConstants.apiBaseUrl}$endpoint';
     final String? token = await AuthService.getToken();
 
@@ -30,17 +34,26 @@ class ApiService {
       if (connectivityResult.contains(ConnectivityResult.none)) {
         return {
           'error': true,
-          'message': 'No internet connection. Please check your Wi-Fi or Mobile Data.'
+          'message':
+              'No internet connection. Please check your Wi-Fi or Mobile Data.',
         };
       }
       http.Response response;
-      
+
       switch (method.toUpperCase()) {
         case 'POST':
-          response = await http.post(Uri.parse(url), headers: headers, body: jsonEncode(body));
+          response = await http.post(
+            Uri.parse(url),
+            headers: headers,
+            body: jsonEncode(body),
+          );
           break;
         case 'PUT':
-          response = await http.put(Uri.parse(url), headers: headers, body: jsonEncode(body));
+          response = await http.put(
+            Uri.parse(url),
+            headers: headers,
+            body: jsonEncode(body),
+          );
           break;
         default:
           response = await http.get(Uri.parse(url), headers: headers);
@@ -48,15 +61,37 @@ class ApiService {
 
       if (response.statusCode == 401) {
         await _triggerGlobalLogout();
-        return {'error': true, 'message': 'Session expired. Please log in again.', 'status': 401};
+        return {
+          'error': true,
+          'message': 'Session expired. Please log in again.',
+          'status': 401,
+        };
       }
 
-      final decoded = jsonDecode(response.body);
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (jsonError) {
+        print("RAW SERVER CRASH DUMP: ${response.body}");
+        return {
+          'error': true,
+          'message':
+              'Internal Server Error (${response.statusCode}). Check backend logs.',
+          'status': response.statusCode,
+        };
+      }
 
-      if (decoded is Map && decoded.containsKey('message') && 
-          decoded['message'].toString().toLowerCase().contains('unauthenticated')) {
+      if (decoded is Map &&
+          decoded.containsKey('message') &&
+          decoded['message'].toString().toLowerCase().contains(
+            'unauthenticated',
+          )) {
         await _triggerGlobalLogout();
-        return {'error': true, 'message': 'Session expired. Please log in again.', 'status': 401};
+        return {
+          'error': true,
+          'message': 'Session expired. Please log in again.',
+          'status': 401,
+        };
       }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -64,23 +99,24 @@ class ApiService {
           return {'data': decoded};
         }
         return decoded;
-      } 
-      
+      }
+
       return {
         'error': true,
         'message': decoded['message'] ?? 'Status Code: ${response.statusCode}',
-        'status': response.statusCode
+        'status': response.statusCode,
       };
-
     } catch (e) {
       return {'error': true, 'message': 'Network connection error: $e'};
     }
   }
 
   static Future<void> _triggerGlobalLogout() async {
-    print("DEBUG: Token invalidation intercepted. Redirecting to LoginScreen...");
-    await AuthService.clearAuth(); 
-    
+    print(
+      "DEBUG: Token invalidation intercepted. Redirecting to LoginScreen...",
+    );
+    await AuthService.clearAuth();
+
     NavigationService.navigatorKey.currentState?.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
@@ -124,7 +160,9 @@ class ApiService {
         final errorData = jsonDecode(response.body);
         return {
           'error': true,
-          'message': errorData['message'] ?? 'Upload failed with status: ${response.statusCode}'
+          'message':
+              errorData['message'] ??
+              'Upload failed with status: ${response.statusCode}',
         };
       }
     } catch (e) {
@@ -132,8 +170,15 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> downloadAndOpenFile(int documentId, String title) async {
-    final String url = '${AppConstants.apiBaseUrl}/documents/$documentId/download';
+  static Future<Map<String, dynamic>> downloadAndOpenFile(
+    int id,
+    String title, {
+    bool isDirective = false,
+  }) async {
+    String url = '${AppConstants.apiBaseUrl}/documents/$id/download';
+    if (isDirective) {
+      url += '?directive=true';
+    }
     final String? token = await AuthService.getToken();
 
     try {
@@ -152,7 +197,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        String extension = '.pdf'; 
+        String extension = '.pdf';
         if (response.headers.containsKey('content-type')) {
           final contentType = response.headers['content-type']!;
           if (contentType.contains('wordprocessingml')) extension = '.docx';
@@ -167,21 +212,31 @@ class ApiService {
         await file.writeAsBytes(response.bodyBytes);
 
         final result = await OpenFile.open(savePath);
-        
+
         if (result.type != ResultType.done) {
-          return {'error': true, 'message': 'Could not open file. No viewer installed.'};
+          return {
+            'error': true,
+            'message': 'Could not open file. No viewer installed.',
+          };
         }
         return {'error': false, 'message': 'Success'};
       } else {
-        return {'error': true, 'message': 'Failed to download file. Status: ${response.statusCode}'};
+        return {
+          'error': true,
+          'message': 'Failed to download file. Status: ${response.statusCode}',
+        };
       }
     } catch (e) {
       return {'error': true, 'message': 'Download error: $e'};
     }
   }
 
-  static Future<Map<String, dynamic>> uploadReport(int documentId, File file) async {
-    final String url = '${AppConstants.apiBaseUrl}/documents/$documentId/report';
+  static Future<Map<String, dynamic>> uploadReport(
+    int documentId,
+    File file,
+  ) async {
+    final String url =
+        '${AppConstants.apiBaseUrl}/documents/$documentId/report';
     final String? token = await AuthService.getToken();
 
     try {
@@ -197,7 +252,9 @@ class ApiService {
         request.headers['Authorization'] = 'Bearer $token';
       }
 
-      request.files.add(await http.MultipartFile.fromPath('report_file', file.path));
+      request.files.add(
+        await http.MultipartFile.fromPath('report_file', file.path),
+      );
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -208,7 +265,9 @@ class ApiService {
         final errorData = jsonDecode(response.body);
         return {
           'error': true,
-          'message': errorData['message'] ?? 'Upload failed with status: ${response.statusCode}'
+          'message':
+              errorData['message'] ??
+              'Upload failed with status: ${response.statusCode}',
         };
       }
     } catch (e) {

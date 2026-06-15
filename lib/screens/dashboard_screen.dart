@@ -1,11 +1,14 @@
+import 'package:dms_mobile/utils/dialog_helper.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'upload_screen.dart';
 import '../providers/document_provider.dart';
 import 'login_screen.dart';
 import 'document_detail_screen.dart';
 import 'archive_search_screen.dart';
-import 'upload_screen.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -145,13 +148,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
               leading: const Icon(Icons.logout, color: Colors.grey),
               title: const Text('Log Out'),
               onTap: () async {
-                Navigator.pop(context);
-                await context.read<AuthProvider>().logout();
-                if (context.mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
+                final confirm = await DialogHelper.showConfirmation(
+                  context: context,
+                  title: 'Log Out',
+                  content:
+                      'Are you sure you want to end your session and log out of the system?',
+                  confirmLabel: 'Log Out',
+                  confirmColor: Colors.red.shade700,
+                  icon: Icons.logout,
+                );
+
+                if (confirm && context.mounted) {
+                  Navigator.pop(context);
+                  await context.read<AuthProvider>().logout();
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  }
                 }
               },
             ),

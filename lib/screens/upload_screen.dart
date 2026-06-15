@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/document_provider.dart';
+import '../utils/dialog_helper.dart';
+
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -47,6 +49,18 @@ class _UploadScreenState extends State<UploadScreen> {
 
   Future<void> _submitUpload() async {
     if (_formKey.currentState!.validate() && _selectedFile != null) {
+      // Show confirmation dialog before proceeding with upload
+      final confirm = await DialogHelper.showConfirmation(
+        context: context,
+        title: 'Confirm Upload',
+        content: 'Are you sure you want to upload this document into the urgent feed? This will generate a new control tracking number.',
+        confirmLabel: 'Upload File',
+        icon: Icons.cloud_upload_outlined,
+      );
+
+      // If user cancels, stop the upload process
+      if (!confirm) return;
+
       setState(() => _isUploading = true);
 
       final result = await ApiService.uploadDocument(
