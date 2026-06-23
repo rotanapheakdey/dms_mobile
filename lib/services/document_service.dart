@@ -133,14 +133,25 @@ class DocumentService {
   // ===================== UTILS & SEARCH =====================
 
   /// GET /documents/archive?search=query
-  Future<List<Document>> searchArchive(String query) async {
+  /// Returns: { documents, access_level, result_count }
+  Future<Map<String, dynamic>> searchArchive(String query) async {
     final endpoint = query.isNotEmpty
         ? '/documents/archive?search=${Uri.encodeComponent(query)}'
         : '/documents/archive';
     final response = await _api.get(endpoint);
-    if (response.containsKey('error')) return [];
+
+    if (response.containsKey('error')) {
+      return {'documents': <Document>[], 'access_level': '', 'result_count': 0};
+    }
+
     final List<dynamic> data = response['documents'] ?? response['data'] ?? [];
-    return data.map((json) => Document.fromJson(json)).toList();
+    final documents = data.map((json) => Document.fromJson(json)).toList();
+
+    return {
+      'documents': documents,
+      'access_level': response['access_level'] ?? '',
+      'result_count': response['result_count'] ?? documents.length,
+    };
   }
 
   /// GET /documents/{id}/download — returns raw bytes

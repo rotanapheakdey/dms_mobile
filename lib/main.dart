@@ -42,7 +42,7 @@ class DMSApp extends StatelessWidget {
         return MaterialApp(
           title: 'DMS',
           navigatorKey: NavigationService.navigatorKey,
-          theme: themeProvider.currentTheme,
+          theme: themeProvider.themeForLocale(localeProvider.locale),
           locale: localeProvider.locale,
           supportedLocales: const [
             Locale('en'),

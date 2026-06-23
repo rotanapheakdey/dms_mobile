@@ -148,9 +148,17 @@ class AppLocalizations {
   String get archiveSuccess => _t('Document archived permanently!', 'ឯកសារត្រូវបានរក្សាទុកជាអចិន្ត្រៃយ៍!');
   String get archiveSearch => _t('Archive Search', 'ស្វែងរកបណ្ណសារ');
   String get searchArchive => _t('Search archives...', 'ស្វែងរកក្នុងបណ្ណសារ...');
-  String get noArchives => _t('No Archived Documents', 'គ្មានឯកសារបណ្ណសារ');
+  String get noArchives => _t('No Results Found', 'រកមិនឃើញឯកសារ');
   String get noArchivesSubtitle => _t('Archived documents will appear here.', 'ឯកសារបណ្ណសារនឹងបង្ហាញនៅទីនេះ។');
   String get searchResults => _t('Search results for', 'លទ្ធផលស្វែងរកសម្រាប់');
+  String get searchingArchive => _t('Searching archive...', 'កំពុងស្វែងរកបណ្ណសារ...');
+  String get searchArchiveHint => _t('Enter a keyword or control number\nto find archived documents.', 'បញ្ចូលពាក្យគន្លឹះ ឬលេខគ្រប់គ្រង\nដើម្បីស្វែងរកឯកសារបណ្ណសារ។');
+  String get noArchiveResults => _t('No archived documents match your search.', 'គ្មានឯកសារបណ្ណសារដែលត្រូវគ្នានឹងការស្វែងរករបស់អ្នក។');
+  String get results => _t('result(s)', 'លទ្ធផល');
+  String get unknown => _t('Unknown', 'មិនស្គាល់');
+  String get global => _t('Global', 'ទូទៅ');
+  String get globalAccess => _t('Global Access', 'ការចូលប្រើទូទៅ');
+  String get restricted => _t('Restricted', 'ត្រូវបានកម្រិត');
 
   // ─── NOTIFICATIONS ───
   String get notifications => _t('Notifications', 'ការជូនដំណឹង');

@@ -1,3 +1,4 @@
+import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -464,13 +465,18 @@ class ProfileScreen extends StatelessWidget {
                   color: colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // English option
+                     // English option
               _buildLanguageOption(
                 context: ctx,
                 locale: const Locale('en'),
-                flag: '🇬🇧',
+                flagIcon: CountryFlag.fromCountryCode(
+                  'GB',
+                  theme: const ImageTheme(
+                    width: 48,
+                    height: 34,
+                    shape: RoundedRectangle(8),
+                  ),
+                ),
                 label: 'English',
                 sublabel: 'English',
                 isSelected: !localeProvider.isKhmer,
@@ -486,7 +492,14 @@ class ProfileScreen extends StatelessWidget {
               _buildLanguageOption(
                 context: ctx,
                 locale: const Locale('km'),
-                flag: '🇰🇭',
+                flagIcon: CountryFlag.fromCountryCode(
+                  'KH',
+                  theme: const ImageTheme(
+                    width: 48,
+                    height: 34,
+                    shape: RoundedRectangle(8),
+                  ),
+                ),
                 label: 'ភាសាខ្មែរ',
                 sublabel: 'Khmer',
                 isSelected: localeProvider.isKhmer,
@@ -506,7 +519,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildLanguageOption({
     required BuildContext context,
     required Locale locale,
-    required String flag,
+    required Widget flagIcon,
     required String label,
     required String sublabel,
     required bool isSelected,
@@ -533,7 +546,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(flag, style: const TextStyle(fontSize: 28)),
+            flagIcon,
             const SizedBox(width: 16),
             Expanded(
               child: Column(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
@@ -29,7 +30,10 @@ class ThemeProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────
   static const Color _seedColor = Color(0xFF1A56DB);
 
-  ThemeData get currentTheme {
+  ThemeData get currentTheme => themeForLocale(null);
+
+  ThemeData themeForLocale(Locale? locale) {
+    final isKhmer = locale?.languageCode == 'km';
     final brightness = _isDarkMode ? Brightness.dark : Brightness.light;
 
     final colorScheme = ColorScheme.fromSeed(
@@ -43,6 +47,15 @@ class ThemeProvider extends ChangeNotifier {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
 
+      // ─── Kantumruy Pro for Khmer, default system font for English ───
+      fontFamily: isKhmer ? GoogleFonts.kantumruyPro().fontFamily : null,
+      textTheme: isKhmer
+          ? GoogleFonts.kantumruyProTextTheme(
+              brightness == Brightness.dark
+                  ? ThemeData.dark().textTheme
+                  : ThemeData.light().textTheme,
+            )
+          : null,
       // ─── AppBar ───
       appBarTheme: AppBarTheme(
         elevation: 0,

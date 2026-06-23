@@ -50,7 +50,7 @@ class NotificationService {
 
     return NotificationModel(
       id: doc['id'] ?? 0,
-      title: isUrgent ? '⚡ Action Required' : '📥 Inbox Update',
+      title: isUrgent ? 'Action Required' : 'Inbox Update',
       message: message,
       isRead: false,
       createdAt: DateTime.tryParse(doc['updated_at'] ?? '') ?? DateTime.now(),

@@ -540,7 +540,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                       const SizedBox(height: 28),
 
                       // ─── Security Section ───
-                      _buildSectionLabel('🔒  ${l10n.newPassword}', colorScheme),
+                      _buildSectionLabel(l10n.newPassword, colorScheme, icon: Icons.lock_rounded),
                       const SizedBox(height: 4),
                       Text(
                         l10n.newPasswordHint,
@@ -684,18 +684,30 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     );
   }
 
-  Widget _buildSectionLabel(String label, ColorScheme colorScheme) {
+  Widget _buildSectionLabel(String label, ColorScheme colorScheme, {IconData? icon}) {
     return Row(
       children: [
-        Container(
-          width: 3,
-          height: 18,
-          decoration: BoxDecoration(
-            color: colorScheme.primary,
-            borderRadius: BorderRadius.circular(2),
+        if (icon != null) ...[
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 14, color: colorScheme.primary),
           ),
-        ),
-        const SizedBox(width: 10),
+          const SizedBox(width: 10),
+        ] else ...[
+          Container(
+            width: 3,
+            height: 18,
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+        ],
         Text(
           label,
           style: TextStyle(
@@ -707,6 +719,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       ],
     );
   }
+
 
   Widget _buildTextField({
     required TextEditingController controller,

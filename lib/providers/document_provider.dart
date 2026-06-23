@@ -10,6 +10,7 @@ class DocumentProvider extends ChangeNotifier {
   List<Document> _urgentDocuments = [];
   List<Document> _inboxDocuments = [];
   List<Document> _archiveDocuments = [];
+  String _archiveAccessLevel = '';
   List<Department> _departments = [];
   Document? _currentDocument;
 
@@ -21,6 +22,7 @@ class DocumentProvider extends ChangeNotifier {
   List<Document> get urgentDocuments => _urgentDocuments;
   List<Document> get inboxDocuments => _inboxDocuments;
   List<Document> get archiveDocuments => _archiveDocuments;
+  String get archiveAccessLevel => _archiveAccessLevel;
   List<Department> get departments => _departments;
   Document? get currentDocument => _currentDocument;
   bool get isLoading => _isLoading;
@@ -125,7 +127,9 @@ class DocumentProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _archiveDocuments = await _service.searchArchive(query);
+      final result = await _service.searchArchive(query);
+      _archiveDocuments = result['documents'] as List<Document>;
+      _archiveAccessLevel = result['access_level'] as String? ?? '';
     } catch (e) {
       _errorMessage = e.toString();
     }
@@ -337,6 +341,7 @@ class DocumentProvider extends ChangeNotifier {
 
   void clearArchive() {
     _archiveDocuments = [];
+    _archiveAccessLevel = '';
     notifyListeners();
   }
 

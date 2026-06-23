@@ -104,8 +104,39 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     final errorColor = Theme.of(context).colorScheme.error;
     final l10n = context.l10n;
     final docProvider = Provider.of<DocumentProvider>(context, listen: false);
+
+    // Show loading while departments are fetched
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 18, height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            Text(l10n.loading),
+          ],
+        ),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+
     await docProvider.loadDepartments();
+    messenger.hideCurrentSnackBar();
+
     if (!mounted) return;
+
+    // Guard: if no departments returned, show error
+    if (docProvider.departments.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Failed to load departments. Check your connection.'),
+          backgroundColor: errorColor,
+        ),
+      );
+      return;
+    }
 
     final result = await showDialog<Map<String, dynamic>>(
       // ignore: use_build_context_synchronously

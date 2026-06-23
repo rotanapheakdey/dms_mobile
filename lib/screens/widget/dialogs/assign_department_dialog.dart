@@ -83,12 +83,16 @@ class _AssignDepartmentDialogState extends State<AssignDepartmentDialog> {
                 prefixIcon: Icon(Icons.business_rounded, color: colorScheme.onSurfaceVariant, size: 22),
               ),
               initialValue: _selectedDepartmentId,
-              items: widget.departments.map((dept) {
-                return DropdownMenuItem<int>(
-                  value: dept.id,
-                  child: Text(dept.name),
-                );
-              }).toList(),
+              hint: Text(l10n.selectDepartment),
+              isExpanded: true,
+              items: widget.departments.isEmpty
+                  ? []
+                  : widget.departments.map((dept) {
+                      return DropdownMenuItem<int>(
+                        value: dept.id,
+                        child: Text(dept.name, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
               onChanged: (value) => setState(() => _selectedDepartmentId = value),
             ),
             const SizedBox(height: 16),
