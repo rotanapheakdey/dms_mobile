@@ -1,51 +1,192 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  Map<String, dynamic>? currentUser;
-  String? token;
-  bool isLoading = false;
-  String? errorMessage;
+  final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
+
+  User? _user;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  User? get user => _user;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get isLoggedIn => _user != null;
+
+  Future<void> loadUser() async {
+    _user = await _authService.getCurrentUser();
+    notifyListeners();
+  }
 
   Future<bool> login(String email, String password) async {
-    isLoading = true;
-    errorMessage = null;
-    notifyListeners(); 
-
-    final result = await ApiService.call('POST', '/login', body: {
-      'email': email,
-      'password': password,
-    });
-
-    isLoading = false;
-
-    if (result.containsKey('error') && result['error'] == true) {
-      errorMessage = result['message'];
-      notifyListeners();
-      return false;
-    }
-
-    if (result.containsKey('access_token')) {
-      token = result['access_token'];
-      currentUser = result['user'];
-      
-      await AuthService.saveToken(token!);
-      await AuthService.saveUser(currentUser!);
-      
-      notifyListeners();
-      return true;
-    }
-
-    errorMessage = 'An unknown error occurred.';
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
-    return false;
+
+    final success = await _authService.login(email, password);
+    if (success) {
+      _user = await _authService.getCurrentUser();
+    } else {
+      _errorMessage = 'Invalid email or password';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return success;
   }
 
   Future<void> logout() async {
-    await AuthService.clearAuth();
-    currentUser = null;
-    token = null;
+    await _authService.logout();
+    _user = null;
     notifyListeners();
   }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  /// Update own profile — PUT /users/{id}
+  Future<bool> updateProfile({
+    String? name,
+    String? email,
+    String? password,
+    String? avatarPath,
+  }) async {
+    if (_user == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _userService.updateProfile(
+        id: _user!.id,
+        name: name,
+        email: email,
+        password: password,
+        avatarPath: avatarPath,
+      );
+
+      if (response.containsKey('error')) {
+        _errorMessage = response['message'] ?? 'Update failed';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // Update local user from server response
+      final updatedJson = response['user'];
+      if (updatedJson != null) {
+        _user = User.fromJson(updatedJson);
+      } else {
+        // Fallback: update fields locally
+        _user = _user!.copyWith(
+          name: name,
+          email: email,
+          avatarUrl: avatarPath,
+        );
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Upload new avatar — POST /users/{id}/avatar
+  Future<bool> updateAvatar(String avatarPath) async {
+    if (_user == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _userService.updateAvatar(
+        id: _user!.id,
+        avatarPath: avatarPath,
+      );
+
+      if (response.containsKey('error')) {
+        _errorMessage = response['message'] ?? 'Avatar update failed';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // Refresh user to get new avatar_url from server
+      final refreshed = await _userService.getUser(_user!.id);
+      if (refreshed != null) _user = refreshed;
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Remove avatar — DELETE /users/{id}/avatar
+  Future<bool> removeAvatar() async {
+    if (_user == null) return false;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _userService.removeAvatar(_user!.id);
+      if (response.containsKey('error')) {
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+      _user = _user!.copyWith(clearAvatar: true);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  bool hasPermission(String action) {
+    if (_user == null) return false;
+
+    final Map<String, List<String>> permissions = {
+      'upload': ['file_dept'],
+      'assign': ['dg'],
+      'dispatch': ['file_dept'],
+      'sign_vdg': ['vdg'],
+      'sign_dg': ['dg'],
+      'archive': ['file_dept'],
+      'manage_users': ['dg'],
+      'view_all': ['dg', 'file_dept'],
+      'view_department': ['vdg', 'department', 'staff'],
+    };
+
+    return permissions[action]?.contains(_user!.role) ?? false;
+  }
+
+  // Convenience getters
+  bool get canUpload => hasPermission('upload');
+  bool get canAssign => hasPermission('assign');
+  bool get canDispatch => hasPermission('dispatch');
+  bool get canVDGSign => hasPermission('sign_vdg');
+  bool get canDGSign => hasPermission('sign_dg');
+  bool get canArchive => hasPermission('archive');
+  bool get canManageUsers => hasPermission('manage_users');
 }

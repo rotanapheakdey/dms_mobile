@@ -1,32 +1,72 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../utils/constants.dart';
+import '../config/app_config.dart';
+import '../models/user.dart';
+import 'api_client.dart';
 
 class AuthService {
-  static const _storage = FlutterSecureStorage();
+  final ApiClient _api = ApiClient();
+  final _storage = const FlutterSecureStorage();
 
-  static Future<void> saveToken(String token) async {
-    await _storage.write(key: AppConstants.tokenKey, value: token);
-  }
+  Future<bool> login(String email, String password) async {
+    try {
+      final response = await _api.post('/login', body: {
+        'email': email,
+        'password': password,
+      });
 
-  static Future<String?> getToken() async {
-    return await _storage.read(key: AppConstants.tokenKey);
-  }
+      if (response.containsKey('error')) {
+        return false;
+      }
 
-  static Future<void> saveUser(Map<String, dynamic> userData) async {
-    await _storage.write(key: AppConstants.userKey, value: jsonEncode(userData));
-  }
+      if (response.containsKey('access_token')) {
+        await _storage.write(
+          key: AppConfig.tokenKey,
+          value: response['access_token'],
+        );
+        await _storage.write(
+          key: AppConfig.userKey,
+          value: jsonEncode(response['user']),
+        );
+        return true;
+      }
 
-  static Future<Map<String, dynamic>?> getUser() async {
-    String? userData = await _storage.read(key: AppConstants.userKey);
-    if (userData != null) {
-      return jsonDecode(userData);
+      return false;
+    } catch (e) {
+      return false;
     }
-    return null;
   }
 
-  static Future<void> clearAuth() async {
-    await _storage.delete(key: AppConstants.tokenKey);
-    await _storage.delete(key: AppConstants.userKey);
+  Future<void> logout() async {
+    try {
+      await _api.post('/logout');
+    } catch (e) {
+      // Ignore error on logout
+    } finally {
+      await _storage.delete(key: AppConfig.tokenKey);
+      await _storage.delete(key: AppConfig.userKey);
+    }
+  }
+
+  Future<User?> getCurrentUser() async {
+    try {
+      final userJson = await _storage.read(key: AppConfig.userKey);
+      if (userJson != null) {
+        final data = jsonDecode(userJson);
+        return User.fromJson(data);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<String?> getToken() async {
+    return await _storage.read(key: AppConfig.tokenKey);
+  }
+
+  Future<void> clearAuth() async {
+    await _storage.delete(key: AppConfig.tokenKey);
+    await _storage.delete(key: AppConfig.userKey);
   }
 }
