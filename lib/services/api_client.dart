@@ -133,13 +133,18 @@ class ApiClient {
     }
 
     try {
-      final data = jsonDecode(response.body);
+      final decoded = jsonDecode(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return data;
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        } else if (decoded is List) {
+          return {'data': decoded};
+        }
+        return {'data': decoded};
       }
       return {
         'error': true,
-        'message': data['message'] ?? 'Request failed',
+        'message': decoded is Map ? (decoded['message'] ?? 'Request failed') : 'Request failed',
         'statusCode': response.statusCode,
       };
     } catch (e) {

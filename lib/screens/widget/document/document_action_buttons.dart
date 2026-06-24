@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dms_mobile/models/document.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DocumentActionButtons extends StatelessWidget {
   final Document document;
@@ -27,11 +28,12 @@ class DocumentActionButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = document.status;
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
 
     if (status == 'pending_dg_init' && userRole == 'dg') {
       return _buildActionButton(
         context,
-        label: 'Assign Department',
+        label: l10n.assignDepartment,
         icon: Icons.assignment_rounded,
         onPressed: onAssign,
         color: colorScheme.primary,
@@ -41,7 +43,7 @@ class DocumentActionButtons extends StatelessWidget {
     if (status == 'pending_dispatch' && userRole == 'file_dept') {
       return _buildActionButton(
         context,
-        label: 'Dispatch',
+        label: l10n.dispatch,
         icon: Icons.send_rounded,
         onPressed: onDispatch,
         color: Colors.orange.shade700,
@@ -51,7 +53,7 @@ class DocumentActionButtons extends StatelessWidget {
     if (status == 'dg_directed' && (userRole == 'department' || userRole == 'staff')) {
       return _buildActionButton(
         context,
-        label: 'Upload Report',
+        label: l10n.uploadReport,
         icon: Icons.upload_file_rounded,
         onPressed: onUploadReport,
         color: Colors.teal.shade600,
@@ -61,7 +63,7 @@ class DocumentActionButtons extends StatelessWidget {
     if (status == 'pending_vdg_approval' && userRole == 'vdg') {
       return _buildActionButton(
         context,
-        label: 'Sign (VDG)',
+        label: l10n.signVDG,
         icon: Icons.draw_rounded,
         onPressed: onVDGSign,
         color: Colors.purple.shade600,
@@ -71,7 +73,7 @@ class DocumentActionButtons extends StatelessWidget {
     if (status == 'pending_dg_approval' && userRole == 'dg') {
       return _buildActionButton(
         context,
-        label: 'Sign (DG)',
+        label: l10n.signDG,
         icon: Icons.verified_rounded,
         onPressed: onDGSign,
         color: Colors.green.shade600,
@@ -81,7 +83,7 @@ class DocumentActionButtons extends StatelessWidget {
     if (status == 'dg_signed' && userRole == 'file_dept') {
       return _buildActionButton(
         context,
-        label: 'Archive',
+        label: l10n.archive,
         icon: Icons.archive_rounded,
         onPressed: onArchive,
         color: Colors.blueGrey.shade600,

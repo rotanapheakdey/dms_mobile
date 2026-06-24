@@ -20,6 +20,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   late final Animation<double> _headerFade;
   late final Animation<double> _cardsFade;
   late final Animation<Offset> _cardsSlide;
+  late final Animation<double> _listFade;
 
   @override
   void initState() {
@@ -27,26 +28,31 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 900),
     );
 
     _headerFade = CurvedAnimation(
       parent: _animController,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
     );
 
     _cardsFade = CurvedAnimation(
       parent: _animController,
-      curve: const Interval(0.2, 0.7, curve: Curves.easeOut),
+      curve: const Interval(0.25, 0.65, curve: Curves.easeOut),
     );
 
     _cardsSlide = Tween<Offset>(
-      begin: const Offset(0, 0.08),
+      begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animController,
-      curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
+      curve: const Interval(0.25, 0.65, curve: Curves.easeOutCubic),
     ));
+
+    _listFade = CurvedAnimation(
+      parent: _animController,
+      curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -63,50 +69,52 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.dispose();
   }
 
+  // ─── Role-specific accent color ───
+  Color _roleColor(String? role, ColorScheme cs) {
+    switch (role) {
+      case 'dg':
+        return const Color(0xFFD32F2F);
+      case 'vdg':
+        return const Color(0xFFE65100);
+      case 'file_dept':
+        return const Color(0xFF1565C0);
+      case 'department':
+        return const Color(0xFF2E7D32);
+      case 'staff':
+        return const Color(0xFF6A1B9A);
+      default:
+        return cs.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final doc = context.watch<DocumentProvider>();
     final user = auth.user;
     final colorScheme = Theme.of(context).colorScheme;
+    final accentColor = _roleColor(user?.role, colorScheme);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: () async {
-          await Future.wait([
-            doc.loadUrgent(),
-            doc.loadInbox(),
-          ]);
+          await Future.wait([doc.loadUrgent(), doc.loadInbox()]);
+          _animController.reset();
+          _animController.forward();
         },
-        color: colorScheme.primary,
+        color: accentColor,
         backgroundColor: colorScheme.surfaceContainerLow,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
           ),
           slivers: [
-            // ─── Safe area top padding ───
-            SliverToBoxAdapter(
-              child: SizedBox(height: MediaQuery.of(context).padding.top + 8),
-            ),
-
-            // ─── Header ───
+            // ─── Gradient Hero Header ───
             SliverToBoxAdapter(
               child: FadeTransition(
                 opacity: _headerFade,
-                child: _buildHeader(context, user, colorScheme),
-              ),
-            ),
-
-            // ─── Stats Cards ───
-            SliverToBoxAdapter(
-              child: SlideTransition(
-                position: _cardsSlide,
-                child: FadeTransition(
-                  opacity: _cardsFade,
-                  child: _buildStatsCards(context, doc, colorScheme),
-                ),
+                child: _buildHeroHeader(context, user, colorScheme, accentColor, doc),
               ),
             ),
 
@@ -121,23 +129,30 @@ class _DashboardScreenState extends State<DashboardScreen>
             else if (doc.urgentDocuments.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: EmptyState(
-                  title: context.l10n.allCaughtUp,
-                  subtitle: context.l10n.noUrgentDocs,
-                  icon: Icons.check_circle_outline,
+                child: FadeTransition(
+                  opacity: _listFade,
+                  child: EmptyState(
+                    title: context.l10n.allCaughtUp,
+                    subtitle: context.l10n.noUrgentDocs,
+                    icon: Icons.check_circle_outline_rounded,
+                  ),
                 ),
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
                 sliver: SliverMainAxisGroup(
                   slivers: [
                     SliverToBoxAdapter(
-                      child: _buildSectionHeader(
-                        context,
-                        title: context.l10n.urgentDocuments,
-                        count: doc.urgentDocuments.length,
-                        colorScheme: colorScheme,
+                      child: FadeTransition(
+                        opacity: _listFade,
+                        child: _buildSectionHeader(
+                          context,
+                          title: context.l10n.urgentDocuments,
+                          count: doc.urgentDocuments.length,
+                          colorScheme: colorScheme,
+                          accentColor: accentColor,
+                        ),
                       ),
                     ),
                     SliverList.separated(
@@ -145,15 +160,16 @@ class _DashboardScreenState extends State<DashboardScreen>
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final document = doc.urgentDocuments[index];
-                        return DocumentCard(
-                          document: document,
-                          onTap: () {
-                            Navigator.pushNamed(
+                        return FadeTransition(
+                          opacity: _listFade,
+                          child: DocumentCard(
+                            document: document,
+                            onTap: () => Navigator.pushNamed(
                               context,
                               '/document',
                               arguments: {'id': document.id},
-                            );
-                          },
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -164,223 +180,320 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       ),
       floatingActionButton: auth.canUpload
-          ? FloatingActionButton(
+          ? FloatingActionButton.extended(
               onPressed: () => Navigator.pushNamed(context, '/upload'),
               tooltip: context.l10n.uploadDocument,
-              child: const Icon(Icons.add_rounded),
+              backgroundColor: accentColor,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.upload_file_rounded),
+              label: Text(context.l10n.uploadDocument),
             )
           : null,
     );
   }
 
-  // ─── HEADER ───
-  Widget _buildHeader(BuildContext context, user, ColorScheme colorScheme) {
+  // ─── HERO HEADER with gradient + stats ───
+  Widget _buildHeroHeader(
+    BuildContext context,
+    dynamic user,
+    ColorScheme colorScheme,
+    Color accentColor,
+    DocumentProvider doc,
+  ) {
     final l10n = context.l10n;
     final hour = DateTime.now().hour;
-    String greeting = l10n.goodMorning;
-    IconData greetingIcon = Icons.wb_sunny_rounded;
-    if (hour >= 12 && hour < 17) {
+
+    String greeting;
+    IconData greetingIcon;
+    List<Color> gradientColors;
+
+    if (hour < 12) {
+      greeting = l10n.goodMorning;
+      greetingIcon = Icons.wb_sunny_rounded;
+      gradientColors = [
+        const Color(0xFFFF8F00),
+        const Color(0xFFFF6F00),
+        accentColor,
+      ];
+    } else if (hour < 17) {
       greeting = l10n.goodAfternoon;
-      greetingIcon = Icons.wb_sunny_outlined;
-    }
-    if (hour >= 17) {
+      greetingIcon = Icons.wb_cloudy_rounded;
+      gradientColors = [
+        accentColor,
+        accentColor.withValues(alpha: 0.8),
+        accentColor.withValues(alpha: 0.6),
+      ];
+    } else {
       greeting = l10n.goodEvening;
-      greetingIcon = Icons.dark_mode_outlined;
+      greetingIcon = Icons.nights_stay_rounded;
+      gradientColors = [
+        const Color(0xFF1A237E),
+        const Color(0xFF283593),
+        accentColor,
+      ];
     }
 
     final initial = user?.name?.isNotEmpty == true
-        ? user.name[0].toUpperCase()
+        ? (user.name as String)[0].toUpperCase()
         : '?';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      child: Row(
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return Container(
+      margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
         children: [
-          // ── Avatar ──
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withValues(alpha: 0.7),
-                ],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
+          // Decorative circles
+          Positioned(
+            top: -30,
+            right: -20,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.07),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          Positioned(
+            bottom: 20,
+            right: 60,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
 
-          // ── Text ──
-          Expanded(
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, topPadding + 20, 20, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Top row: greeting + avatar ──
                 Row(
                   children: [
-                    Icon(greetingIcon, size: 14, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text(
-                      greeting,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
+                    // Text
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(greetingIcon,
+                                  size: 14,
+                                  color: Colors.white.withValues(alpha: 0.85)),
+                              const SizedBox(width: 6),
+                              Text(
+                                greeting,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color:
+                                      Colors.white.withValues(alpha: 0.85),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            user?.name ?? 'User',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                              height: 1.1,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          // Role badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.35),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_user_rounded,
+                                    size: 12,
+                                    color: Colors.white.withValues(alpha: 0.9)),
+                                const SizedBox(width: 5),
+                                Text(
+                                  user?.displayRole ?? '',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color:
+                                        Colors.white.withValues(alpha: 0.95),
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Avatar
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.2),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          width: 2.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  user?.name ?? 'User',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                    letterSpacing: -0.3,
+
+                const SizedBox(height: 24),
+
+                // ── Stats Row ──
+                SlideTransition(
+                  position: _cardsSlide,
+                  child: FadeTransition(
+                    opacity: _cardsFade,
+                    child: Row(
+                      children: [
+                        _buildStatChip(
+                          label: l10n.filterPending,
+                          count: doc.urgentDocuments.length,
+                          icon: Icons.priority_high_rounded,
+                          chipColor: Colors.red.shade300,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildStatChip(
+                          label: l10n.filterInProgress,
+                          count: doc.inboxDocuments.length,
+                          icon: Icons.inbox_rounded,
+                          chipColor: Colors.blue.shade300,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildStatChip(
+                          label: l10n.documents,
+                          count: doc.documents.length,
+                          icon: Icons.description_rounded,
+                          chipColor: Colors.green.shade300,
+                        ),
+                      ],
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-
-          // ── Role Badge ──
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              user?.displayRole ?? '',
-              style: TextStyle(
-                fontSize: 11,
-                color: colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  // ─── STATS CARDS ───
-  Widget _buildStatsCards(
-    BuildContext context,
-    DocumentProvider doc,
-    ColorScheme colorScheme,
-  ) {
-    final l10n = context.l10n;
-    final urgentCount = doc.urgentDocuments.length;
-    final inboxCount = doc.inboxDocuments.length;
-    final totalCount = doc.documents.length;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          _buildStatCard(
-            context,
-            title: l10n.filterPending,
-            count: urgentCount,
-            color: colorScheme.error,
-            icon: Icons.warning_amber_rounded,
-            colorScheme: colorScheme,
-          ),
-          const SizedBox(width: 12),
-          _buildStatCard(
-            context,
-            title: l10n.filterInProgress,
-            count: inboxCount,
-            color: colorScheme.primary,
-            icon: Icons.inbox_rounded,
-            colorScheme: colorScheme,
-          ),
-          const SizedBox(width: 12),
-          _buildStatCard(
-            context,
-            title: l10n.documents,
-            count: totalCount,
-            color: colorScheme.tertiary,
-            icon: Icons.description_rounded,
-            colorScheme: colorScheme,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context, {
-    required String title,
+  Widget _buildStatChip({
+    required String label,
     required int count,
-    required Color color,
     required IconData icon,
-    required ColorScheme colorScheme,
+    required Color chipColor,
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLow,
+          color: Colors.white.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+            color: Colors.white.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 20, color: color),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: chipColor.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 14, color: chipColor),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               count.toString(),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
+                color: Colors.white,
                 letterSpacing: -0.5,
+                height: 1,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
-              title,
+              label,
               style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
+                fontSize: 10,
+                color: Colors.white.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w500,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -394,16 +507,21 @@ class _DashboardScreenState extends State<DashboardScreen>
     required String title,
     required int count,
     required ColorScheme colorScheme,
+    required Color accentColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16, left: 4, right: 4),
+      padding: const EdgeInsets.only(bottom: 16, top: 4, left: 2, right: 2),
       child: Row(
         children: [
           Container(
             width: 4,
-            height: 20,
+            height: 22,
             decoration: BoxDecoration(
-              color: colorScheme.primary,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [accentColor, accentColor.withValues(alpha: 0.4)],
+              ),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -421,7 +539,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
-              color: colorScheme.errorContainer,
+              color: accentColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -429,30 +547,34 @@ class _DashboardScreenState extends State<DashboardScreen>
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: colorScheme.onErrorContainer,
+                color: accentColor,
               ),
             ),
           ),
           const Spacer(),
           GestureDetector(
             onTap: () => Navigator.pushNamed(context, '/documents'),
-            child: Row(
-              children: [
-                Text(
-                  context.l10n.viewAll,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.primary,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    context.l10n.viewAll,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: accentColor,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 2),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 16,
-                  color: colorScheme.primary,
-                ),
-              ],
+                  const SizedBox(width: 3),
+                  Icon(Icons.arrow_forward_rounded,
+                      size: 14, color: accentColor),
+                ],
+              ),
             ),
           ),
         ],
