@@ -10,6 +10,11 @@ class Document {
   final String? departmentName;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? dgNote;
+  final String? dispatchComment;
+  final DateTime? vdgSignedAt;
+  final DateTime? dgSignedAt;
+  final DateTime? dgAssignedAt;
 
   Document({
     required this.id,
@@ -23,6 +28,11 @@ class Document {
     this.departmentName,
     required this.createdAt,
     required this.updatedAt,
+    this.dgNote,
+    this.dispatchComment,
+    this.vdgSignedAt,
+    this.dgSignedAt,
+    this.dgAssignedAt,
   });
 
   factory Document.fromJson(Map<String, dynamic> json) {
@@ -38,6 +48,11 @@ class Document {
       departmentName: json['department']?['name'],
       createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
+      dgNote: json['dg_note'],
+      dispatchComment: json['dispatch_comment'],
+      vdgSignedAt: json['vdg_signed_at'] != null ? DateTime.tryParse(json['vdg_signed_at']) : null,
+      dgSignedAt: json['dg_signed_at'] != null ? DateTime.tryParse(json['dg_signed_at']) : null,
+      dgAssignedAt: json['assigned_at'] != null ? DateTime.tryParse(json['assigned_at']) : null,
     );
   }
 

@@ -159,6 +159,11 @@ class DocumentService {
     return await _api.downloadFile('/documents/$id/download');
   }
 
+  /// GET /documents/{id}/report/download — returns raw bytes for action report
+  Future<Map<String, dynamic>> downloadReportFile(int id) async {
+    return await _api.downloadFile('/documents/$id/report/download');
+  }
+
   /// GET /departments — list all departments for assignment dialog
   Future<List<Department>> getDepartments() async {
     final response = await _api.get('/departments');

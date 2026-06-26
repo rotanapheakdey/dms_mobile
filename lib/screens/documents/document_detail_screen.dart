@@ -4,6 +4,7 @@ import '../../models/document.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/document_provider.dart';
 import '../../services/document_service.dart';
+import '../../utils/pdf_helper.dart';
 import '../../l10n/app_localizations.dart';
 import '../widget/dialogs/assign_department_dialog.dart';
 import '../widget/dialogs/dispatch_dialog.dart';
@@ -482,9 +483,15 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
         title: Text(context.l10n.documentDetail),
         actions: [
           IconButton(
-            icon: const Icon(Icons.download_rounded),
-            onPressed: _downloadFile,
-            tooltip: context.l10n.downloadFile,
+            icon: Icon(
+              _isPdf(doc.filePath)
+                  ? Icons.visibility_rounded
+                  : Icons.download_rounded,
+            ),
+            onPressed: _isPdf(doc.filePath) ? _viewFile : _downloadFile,
+            tooltip: _isPdf(doc.filePath)
+                ? context.l10n.viewFile
+                : context.l10n.downloadFile,
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -587,50 +594,16 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                 ),
               ),
 
-              // ─── Comment Section ───
-              if (doc.comment != null && doc.comment!.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.chat_bubble_outline_rounded, size: 18, color: colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            context.l10n.comment,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        doc.comment!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: colorScheme.onSurfaceVariant,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              // ─── Files & Attachments Section ───
+              _buildFileSection(doc, user, colorScheme),
+              const SizedBox(height: 16),
 
+              // ─── Comments & Notes Section ───
+              _buildCommentsSection(doc, colorScheme),
+              const SizedBox(height: 16),
+
+              // ─── Verification & Signatures Section ───
+              _buildSignaturesSection(doc, user, colorScheme),
               const SizedBox(height: 16),
 
               // ─── Status Timeline ───
@@ -654,6 +627,504 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ─── DOWNLOAD REPORT FILE ───
+  Future<void> _downloadReportFile() async {
+    if (_document == null) return;
+    final l10n = context.l10n;
+    try {
+      final result = await _service.downloadReportFile(_document!.id);
+      if (result['success'] == true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Text(l10n.downloadSuccess),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? l10n.downloadFailed),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.downloadFailed}: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  bool _isPdf(String? path) {
+    if (path == null) return false;
+    return path.toLowerCase().endsWith('.pdf');
+  }
+
+  // ─── VIEW FILE ───
+  Future<void> _viewFile() async {
+    if (_document == null) return;
+    final l10n = context.l10n;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    
+    try {
+      final result = await _service.downloadFile(_document!.id);
+      if (mounted) Navigator.pop(context); // Close loading dialog
+      
+      if (result['success'] == true) {
+        final filename = _document!.filePath?.split('/').last ?? 'document.pdf';
+        await viewPdfBytes(result['data'], filename);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? l10n.failedToLoad),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Close loading dialog
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.failedToLoad}: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  // ─── VIEW REPORT FILE ───
+  Future<void> _viewReportFile() async {
+    if (_document == null) return;
+    final l10n = context.l10n;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    
+    try {
+      final result = await _service.downloadReportFile(_document!.id);
+      if (mounted) Navigator.pop(context); // Close loading dialog
+      
+      if (result['success'] == true) {
+        final filename = _document!.reportPath?.split('/').last ?? 'report.pdf';
+        await viewPdfBytes(result['data'], filename);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? l10n.failedToLoad),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Close loading dialog
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.failedToLoad}: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  // ─── FILES SECTION ───
+  Widget _buildFileSection(Document doc, dynamic user, ColorScheme colorScheme) {
+    final showReport = doc.reportPath != null && doc.reportPath!.isNotEmpty;
+    final isOrigPdf = _isPdf(doc.filePath);
+    final isReportPdf = _isPdf(doc.reportPath);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.folder_open_rounded, size: 18, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              const Text(
+                'Files & Attachments',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildFileCard(
+            title: 'Original Document',
+            filename: doc.filePath?.split('/').last ?? 'original_document.pdf',
+            icon: Icons.picture_as_pdf_rounded,
+            iconColor: Colors.red.shade700,
+            onAction: isOrigPdf ? _viewFile : _downloadFile,
+            isPdf: isOrigPdf,
+            colorScheme: colorScheme,
+          ),
+          if (showReport) ...[
+            const SizedBox(height: 12),
+            _buildFileCard(
+              title: 'Department Action Report',
+              filename: doc.reportPath?.split('/').last ?? 'action_report.pdf',
+              icon: Icons.summarize_rounded,
+              iconColor: Colors.teal.shade600,
+              onAction: isReportPdf ? _viewReportFile : _downloadReportFile,
+              isPdf: isReportPdf,
+              colorScheme: colorScheme,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFileCard({
+    required String title,
+    required String filename,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onAction,
+    required bool isPdf,
+    required ColorScheme colorScheme,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onAction,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        filename,
+                        style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isPdf ? Icons.visibility_rounded : Icons.download_rounded,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── COMMENTS SECTION ───
+  Widget _buildCommentsSection(Document doc, ColorScheme colorScheme) {
+    final showDgNote = doc.dgNote != null && doc.dgNote!.isNotEmpty &&
+        (doc.status != 'pending_dg_init');
+    final showDispatchComment = doc.dispatchComment != null && doc.dispatchComment!.isNotEmpty &&
+        (doc.status != 'pending_dg_init' && doc.status != 'pending_dispatch');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.comment_bank_rounded, size: 18, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              const Text(
+                'Comments & Workflow Notes',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (doc.comment != null && doc.comment!.isNotEmpty)
+            _buildCommentBubble(
+              role: 'File Dept Upload Comment',
+              comment: doc.comment!,
+              badgeColor: Colors.deepPurple.shade600,
+              colorScheme: colorScheme,
+            ),
+          if (showDgNote) ...[
+            if (doc.comment != null && doc.comment!.isNotEmpty) const SizedBox(height: 12),
+            _buildCommentBubble(
+              role: 'Director General Note',
+              comment: doc.dgNote!,
+              badgeColor: Colors.red.shade700,
+              colorScheme: colorScheme,
+            ),
+          ],
+          if (showDispatchComment) ...[
+            if (showDgNote || (doc.comment != null && doc.comment!.isNotEmpty)) const SizedBox(height: 12),
+            _buildCommentBubble(
+              role: 'File Dept Dispatch Comment',
+              comment: doc.dispatchComment!,
+              badgeColor: Colors.orange.shade800,
+              colorScheme: colorScheme,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentBubble({
+    required String role,
+    required String comment,
+    required Color badgeColor,
+    required ColorScheme colorScheme,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: badgeColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              role.toUpperCase(),
+              style: TextStyle(color: badgeColor, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            comment,
+            style: TextStyle(fontSize: 13, color: colorScheme.onSurface, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── SIGNATURES SECTION ───
+  Widget _buildSignaturesSection(Document doc, dynamic user, ColorScheme colorScheme) {
+    // 1. DG Assignment Signature: visible to everyone once assigned (status is not pending_dg_init)
+    final showDgAssign = doc.status != 'pending_dg_init';
+
+    // 2. VDG Signature: visible to dg and file_dept when status is pending_dg_approval, dg_signed, or completed_archive
+    final isDgOrFileDept = user?.role == 'dg' || user?.role == 'file_dept';
+    final showVdgSign = isDgOrFileDept &&
+        (doc.status == 'pending_dg_approval' ||
+            doc.status == 'dg_signed' ||
+            doc.status == 'completed_archive');
+
+    // 3. DG Final Signature: visible to file_dept when status is dg_signed or completed_archive
+    final isFileDept = user?.role == 'file_dept';
+    final showDgFinalSign = isFileDept &&
+        (doc.status == 'dg_signed' || doc.status == 'completed_archive');
+
+    if (!showDgAssign && !showVdgSign && !showDgFinalSign) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.verified_user_rounded, size: 18, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              const Text(
+                'Verification & Signatures',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (showDgAssign)
+            _buildSignatureCard(
+              title: 'DG Assignment Signature',
+              subtitle: 'Directed & Approved to Department',
+              timestamp: doc.dgAssignedAt ?? doc.createdAt,
+              signerRole: 'Director General',
+              color: Colors.blue.shade600,
+              colorScheme: colorScheme,
+            ),
+          if (showVdgSign) ...[
+            if (showDgAssign) const SizedBox(height: 12),
+            _buildSignatureCard(
+              title: 'VDG Confirmation Signature',
+              subtitle: 'Verified & Approved Action Report',
+              timestamp: doc.vdgSignedAt ?? doc.updatedAt,
+              signerRole: 'Vice Director General',
+              color: Colors.purple.shade600,
+              colorScheme: colorScheme,
+            ),
+          ],
+          if (showDgFinalSign) ...[
+            if (showDgAssign || showVdgSign) const SizedBox(height: 12),
+            _buildSignatureCard(
+              title: 'DG Final Approval Signature',
+              subtitle: 'Final Approval Signed & Granted',
+              timestamp: doc.dgSignedAt ?? doc.updatedAt,
+              signerRole: 'Director General',
+              color: Colors.green.shade600,
+              colorScheme: colorScheme,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignatureCard({
+    required String title,
+    required String subtitle,
+    required DateTime timestamp,
+    required String signerRole,
+    required Color color,
+    required ColorScheme colorScheme,
+  }) {
+    final formattedDate = _formatDateTime(timestamp);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.verified_rounded, color: color, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.schedule_rounded, size: 12, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              signerRole,
+              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }
