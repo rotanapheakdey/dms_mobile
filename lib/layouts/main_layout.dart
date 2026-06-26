@@ -22,7 +22,7 @@ class _MainLayoutState extends State<MainLayout>
   // 4 tabs: 0=Home/Dashboard, 1=Documents, 2=Archive, 3=Profile
   final List<Widget> _screens = [
     const DashboardScreen(),
-    const DocumentListScreen(),
+    const DocumentListScreen(isTab: true),
     const ArchiveSearchScreen(),
     const ProfileScreen(),
   ];

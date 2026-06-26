@@ -149,13 +149,13 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     );
 
     if (result != null && mounted) {
-      final success = await _service.assignDocument(
+      final success = await docProvider.assignDocument(
         id: documentId,
         departmentId: result['assigned_department_id'],
         note: result['dg_note'],
       );
 
-      if (success == null) {
+      if (success) {
         messenger.showSnackBar(
           SnackBar(
             content: Row(
@@ -168,10 +168,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             backgroundColor: Colors.green.shade600,
           ),
         );
-        _refreshDocument();
+        setState(() => _document = docProvider.currentDocument);
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(success), backgroundColor: errorColor),
+          SnackBar(content: Text(docProvider.errorMessage ?? l10n.failedToLoad), backgroundColor: errorColor),
         );
       }
     }
@@ -179,6 +179,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
 
   // ─── SHOW DISPATCH DIALOG ───
   Future<void> _showDispatchDialog(BuildContext context, int documentId) async {
+    final docProvider = Provider.of<DocumentProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
     final errorColor = Theme.of(context).colorScheme.error;
     final l10n = context.l10n;
@@ -188,12 +189,12 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     );
 
     if (result != null && mounted) {
-      final error = await _service.dispatchDocument(
+      final success = await docProvider.dispatchDocument(
         id: documentId,
         comment: result,
       );
 
-      if (error == null) {
+      if (success) {
         messenger.showSnackBar(
           SnackBar(
             content: Row(
@@ -206,10 +207,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             backgroundColor: Colors.green.shade600,
           ),
         );
-        _refreshDocument();
+        setState(() => _document = docProvider.currentDocument);
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: errorColor),
+          SnackBar(content: Text(docProvider.errorMessage ?? l10n.failedToLoad), backgroundColor: errorColor),
         );
       }
     }
@@ -220,6 +221,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     BuildContext context,
     int documentId,
   ) async {
+    final docProvider = Provider.of<DocumentProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
     final errorColor = Theme.of(context).colorScheme.error;
     final l10n = context.l10n;
@@ -229,12 +231,12 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     );
 
     if (result != null && mounted) {
-      final error = await _service.uploadReport(
+      final success = await docProvider.uploadReport(
         id: documentId,
         filePath: result,
       );
 
-      if (error == null) {
+      if (success) {
         messenger.showSnackBar(
           SnackBar(
             content: Row(
@@ -247,10 +249,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             backgroundColor: Colors.green.shade600,
           ),
         );
-        _refreshDocument();
+        setState(() => _document = docProvider.currentDocument);
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: errorColor),
+          SnackBar(content: Text(docProvider.errorMessage ?? l10n.failedToLoad), backgroundColor: errorColor),
         );
       }
     }
@@ -280,9 +282,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
 
     if (confirm == true && mounted) {
       final messenger = ScaffoldMessenger.of(context);
-      final error = await _service.signDocument(documentId, true);
+      final docProvider = Provider.of<DocumentProvider>(context, listen: false);
+      final success = await docProvider.signDocument(documentId, true);
 
-      if (error == null) {
+      if (success) {
         messenger.showSnackBar(
           SnackBar(
             content: Row(
@@ -295,10 +298,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             backgroundColor: Colors.green.shade600,
           ),
         );
-        _refreshDocument();
+        setState(() => _document = docProvider.currentDocument);
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: colorScheme.error),
+          SnackBar(content: Text(docProvider.errorMessage ?? l10n.failedToLoad), backgroundColor: colorScheme.error),
         );
       }
     }
@@ -331,9 +334,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
 
     if (confirm == true && mounted) {
       final messenger = ScaffoldMessenger.of(context);
-      final error = await _service.signDocument(documentId, false);
+      final docProvider = Provider.of<DocumentProvider>(context, listen: false);
+      final success = await docProvider.signDocument(documentId, false);
 
-      if (error == null) {
+      if (success) {
         messenger.showSnackBar(
           SnackBar(
             content: Row(
@@ -346,10 +350,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             backgroundColor: Colors.green.shade600,
           ),
         );
-        _refreshDocument();
+        setState(() => _document = docProvider.currentDocument);
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: colorScheme.error),
+          SnackBar(content: Text(docProvider.errorMessage ?? l10n.failedToLoad), backgroundColor: colorScheme.error),
         );
       }
     }
@@ -382,9 +386,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
 
     if (confirm == true && mounted) {
       final messenger = ScaffoldMessenger.of(context);
-      final error = await _service.archiveDocument(documentId);
+      final docProvider = Provider.of<DocumentProvider>(context, listen: false);
+      final success = await docProvider.archiveDocument(documentId);
 
-      if (error == null) {
+      if (success) {
         messenger.showSnackBar(
           SnackBar(
             content: Row(
@@ -397,10 +402,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             backgroundColor: Colors.green.shade600,
           ),
         );
-        _refreshDocument();
+        setState(() => _document = docProvider.currentDocument);
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: colorScheme.error),
+          SnackBar(content: Text(docProvider.errorMessage ?? l10n.failedToLoad), backgroundColor: colorScheme.error),
         );
       }
     }
@@ -694,7 +699,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
       if (mounted) Navigator.pop(context); // Close loading dialog
       
       if (result['success'] == true) {
-        final filename = _document!.filePath?.split('/').last ?? 'document.pdf';
+        final filename = _document!.filePath?.split(RegExp(r'[/\\]')).last ?? 'document.pdf';
         await viewPdfBytes(result['data'], filename);
       } else {
         if (!mounted) return;
@@ -735,7 +740,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
       if (mounted) Navigator.pop(context); // Close loading dialog
       
       if (result['success'] == true) {
-        final filename = _document!.reportPath?.split('/').last ?? 'report.pdf';
+        final filename = _document!.reportPath?.split(RegExp(r'[/\\]')).last ?? 'report.pdf';
         await viewPdfBytes(result['data'], filename);
       } else {
         if (!mounted) return;
@@ -781,16 +786,16 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             children: [
               Icon(Icons.folder_open_rounded, size: 18, color: colorScheme.primary),
               const SizedBox(width: 8),
-              const Text(
-                'Files & Attachments',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                context.l10n.filesAndAttachments,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
           _buildFileCard(
-            title: 'Original Document',
-            filename: doc.filePath?.split('/').last ?? 'original_document.pdf',
+            title: context.l10n.originalDocument,
+            filename: doc.filePath?.split(RegExp(r'[/\\]')).last ?? 'original_document.pdf',
             icon: Icons.picture_as_pdf_rounded,
             iconColor: Colors.red.shade700,
             onAction: isOrigPdf ? _viewFile : _downloadFile,
@@ -800,8 +805,8 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           if (showReport) ...[
             const SizedBox(height: 12),
             _buildFileCard(
-              title: 'Department Action Report',
-              filename: doc.reportPath?.split('/').last ?? 'action_report.pdf',
+              title: context.l10n.departmentActionReport,
+              filename: doc.reportPath?.split(RegExp(r'[/\\]')).last ?? 'action_report.pdf',
               icon: Icons.summarize_rounded,
               iconColor: Colors.teal.shade600,
               onAction: isReportPdf ? _viewReportFile : _downloadReportFile,
@@ -902,16 +907,16 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             children: [
               Icon(Icons.comment_bank_rounded, size: 18, color: colorScheme.primary),
               const SizedBox(width: 8),
-              const Text(
-                'Comments & Workflow Notes',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                context.l10n.commentsAndWorkflowNotes,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
           if (doc.comment != null && doc.comment!.isNotEmpty)
             _buildCommentBubble(
-              role: 'File Dept Upload Comment',
+              role: context.l10n.fileDeptUploadComment,
               comment: doc.comment!,
               badgeColor: Colors.deepPurple.shade600,
               colorScheme: colorScheme,
@@ -919,7 +924,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           if (showDgNote) ...[
             if (doc.comment != null && doc.comment!.isNotEmpty) const SizedBox(height: 12),
             _buildCommentBubble(
-              role: 'Director General Note',
+              role: context.l10n.directorGeneralNote,
               comment: doc.dgNote!,
               badgeColor: Colors.red.shade700,
               colorScheme: colorScheme,
@@ -928,7 +933,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           if (showDispatchComment) ...[
             if (showDgNote || (doc.comment != null && doc.comment!.isNotEmpty)) const SizedBox(height: 12),
             _buildCommentBubble(
-              role: 'File Dept Dispatch Comment',
+              role: context.l10n.fileDeptDispatchComment,
               comment: doc.dispatchComment!,
               badgeColor: Colors.orange.shade800,
               colorScheme: colorScheme,
@@ -1016,29 +1021,29 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             children: [
               Icon(Icons.verified_user_rounded, size: 18, color: colorScheme.primary),
               const SizedBox(width: 8),
-              const Text(
-                'Verification & Signatures',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                context.l10n.verificationAndSignatures,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
           if (showDgAssign)
             _buildSignatureCard(
-              title: 'DG Assignment Signature',
-              subtitle: 'Directed & Approved to Department',
+              title: context.l10n.dgAssignmentSignature,
+              subtitle: context.l10n.directedAndApproved,
               timestamp: doc.dgAssignedAt ?? doc.createdAt,
-              signerRole: 'Director General',
+              signerRole: context.l10n.directorGeneral,
               color: Colors.blue.shade600,
               colorScheme: colorScheme,
             ),
           if (showVdgSign) ...[
             if (showDgAssign) const SizedBox(height: 12),
             _buildSignatureCard(
-              title: 'VDG Confirmation Signature',
-              subtitle: 'Verified & Approved Action Report',
+              title: context.l10n.vdgConfirmationSignature,
+              subtitle: context.l10n.verifiedAndApprovedReport,
               timestamp: doc.vdgSignedAt ?? doc.updatedAt,
-              signerRole: 'Vice Director General',
+              signerRole: context.l10n.viceDirectorGeneral,
               color: Colors.purple.shade600,
               colorScheme: colorScheme,
             ),
@@ -1046,10 +1051,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           if (showDgFinalSign) ...[
             if (showDgAssign || showVdgSign) const SizedBox(height: 12),
             _buildSignatureCard(
-              title: 'DG Final Approval Signature',
-              subtitle: 'Final Approval Signed & Granted',
+              title: context.l10n.dgFinalApprovalSignature,
+              subtitle: context.l10n.finalApprovalSigned,
               timestamp: doc.dgSignedAt ?? doc.updatedAt,
-              signerRole: 'Director General',
+              signerRole: context.l10n.directorGeneral,
               color: Colors.green.shade600,
               colorScheme: colorScheme,
             ),

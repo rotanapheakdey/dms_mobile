@@ -110,6 +110,21 @@ class DocumentProvider extends ChangeNotifier {
 
     try {
       _currentDocument = await _service.getDocument(id);
+      if (_currentDocument != null) {
+        // Update in _documents list
+        final index = _documents.indexWhere((d) => d.id == id);
+        if (index != -1) {
+          _documents[index] = _currentDocument!;
+        } else {
+          _documents.add(_currentDocument!);
+        }
+
+        // Update in _inboxDocuments list
+        final inboxIndex = _inboxDocuments.indexWhere((d) => d.id == id);
+        if (inboxIndex != -1) {
+          _inboxDocuments[inboxIndex] = _currentDocument!;
+        }
+      }
       return _currentDocument;
     } catch (e) {
       _errorMessage = e.toString();

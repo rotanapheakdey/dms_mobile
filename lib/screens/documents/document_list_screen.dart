@@ -10,7 +10,8 @@ import '../widget/common/status_badge.dart';
 import '../../models/document.dart';
 
 class DocumentListScreen extends StatefulWidget {
-  const DocumentListScreen({super.key});
+  final bool isTab;
+  const DocumentListScreen({super.key, this.isTab = false});
 
   @override
   State<DocumentListScreen> createState() => _DocumentListScreenState();
@@ -20,6 +21,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   String _selectedFilter = 'all';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  bool _isAscending = false;
 
   final List<String> _filters = [
     'all',
@@ -128,18 +130,20 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                       // Header Navigation Row
                       Row(
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
+                          if (!widget.isTab) ...[
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                                onPressed: () => Navigator.pop(context),
+                                tooltip: context.l10n.back,
+                              ),
                             ),
-                            child: IconButton(
-                              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-                              onPressed: () => Navigator.pop(context),
-                              tooltip: context.l10n.back,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
+                            const SizedBox(width: 12),
+                          ],
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,48 +184,79 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      // Premium Search Bar Inline
-                      Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: isDark ? colorScheme.surfaceContainerLowest : Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                      // Premium Search Bar & Sort Row Inline
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: isDark ? colorScheme.surfaceContainerLowest : Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: TextField(
+                                controller: _searchController,
+                                onChanged: (value) => setState(() => _searchQuery = value),
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: context.l10n.searchDocuments,
+                                  hintStyle: TextStyle(
+                                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
+                                    fontSize: 14,
+                                  ),
+                                  prefixIcon: Icon(Icons.search_rounded, color: accentColor, size: 20),
+                                  suffixIcon: _searchQuery.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(Icons.cancel_rounded, color: colorScheme.onSurfaceVariant),
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            setState(() => _searchQuery = '');
+                                          },
+                                        )
+                                      : null,
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (value) => setState(() => _searchQuery = value),
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
                           ),
-                          decoration: InputDecoration(
-                            hintText: context.l10n.searchDocuments,
-                            hintStyle: TextStyle(
-                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                              fontSize: 14,
+                          const SizedBox(width: 10),
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: isDark ? colorScheme.surfaceContainerLowest : Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            prefixIcon: Icon(Icons.search_rounded, color: accentColor, size: 20),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(Icons.cancel_rounded, color: colorScheme.onSurfaceVariant),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() => _searchQuery = '');
-                                    },
-                                  )
-                                : null,
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            child: IconButton(
+                              icon: Icon(
+                                _isAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                                color: accentColor,
+                                size: 20,
+                              ),
+                              onPressed: () => setState(() => _isAscending = !_isAscending),
+                              tooltip: _isAscending ? context.l10n.sortOldestFirst : context.l10n.sortNewestFirst,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -680,6 +715,16 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
             doc.controlNo.toLowerCase().contains(query);
       }).toList();
     }
+
+    // Sort by date (createdAt)
+    filtered = List<Document>.from(filtered);
+    filtered.sort((a, b) {
+      if (_isAscending) {
+        return a.createdAt.compareTo(b.createdAt);
+      } else {
+        return b.createdAt.compareTo(a.createdAt);
+      }
+    });
 
     return filtered;
   }

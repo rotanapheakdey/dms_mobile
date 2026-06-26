@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/document.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DocumentStatusTimeline extends StatelessWidget {
   final Document document;
@@ -10,15 +11,51 @@ class DocumentStatusTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     final statuses = [
-      {'status': 'pending_dg_init', 'label': 'Uploaded', 'desc': 'Document entered the system', 'icon': Icons.cloud_upload_rounded},
-      {'status': 'pending_dispatch', 'label': 'Assigned', 'desc': 'Awaiting department assignment', 'icon': Icons.assignment_ind_rounded},
-      {'status': 'dg_directed', 'label': 'Dispatched', 'desc': 'Sent to respective department', 'icon': Icons.send_rounded},
-      {'status': 'pending_vdg_approval', 'label': 'Reported', 'desc': 'Action report uploaded', 'icon': Icons.summarize_rounded},
-      {'status': 'pending_dg_approval', 'label': 'VDG Signed', 'desc': 'Approved by Vice Director', 'icon': Icons.draw_rounded},
-      {'status': 'dg_signed', 'label': 'DG Signed', 'desc': 'Final approval granted', 'icon': Icons.verified_rounded},
-      {'status': 'completed_archive', 'label': 'Archived', 'desc': 'Stored securely in records', 'icon': Icons.archive_rounded},
+      {
+        'status': 'pending_dg_init',
+        'label': l10n.statusPendingDGInit,
+        'desc': l10n.isKhmer ? 'ឯកសារត្រូវបានបញ្ចូលក្នុងប្រព័ន្ធ' : 'Document entered the system',
+        'icon': Icons.cloud_upload_rounded
+      },
+      {
+        'status': 'pending_dispatch',
+        'label': l10n.statusPendingDispatch,
+        'desc': l10n.isKhmer ? 'កំពុងរង់ចាំការចាត់ចែងពីផ្នែកឯកសារ' : 'Awaiting department assignment',
+        'icon': Icons.assignment_ind_rounded
+      },
+      {
+        'status': 'dg_directed',
+        'label': l10n.statusDGDirected,
+        'desc': l10n.isKhmer ? 'បានបញ្ជូនទៅផ្នែកដែលពាក់ព័ន្ធ' : 'Sent to respective department',
+        'icon': Icons.send_rounded
+      },
+      {
+        'status': 'pending_vdg_approval',
+        'label': l10n.statusPendingVDGApproval,
+        'desc': l10n.isKhmer ? 'របាយការណ៍សកម្មភាពត្រូវបានបញ្ចូល' : 'Action report uploaded',
+        'icon': Icons.summarize_rounded
+      },
+      {
+        'status': 'pending_dg_approval',
+        'label': l10n.statusPendingDGApproval,
+        'desc': l10n.isKhmer ? 'យល់ព្រមដោយអគ្គនាយករង' : 'Approved by Vice Director',
+        'icon': Icons.draw_rounded
+      },
+      {
+        'status': 'dg_signed',
+        'label': l10n.statusDGSigned,
+        'desc': l10n.isKhmer ? 'ការអនុម័តចុងក្រោយត្រូវបានចុះហត្ថលេខា' : 'Final approval granted',
+        'icon': Icons.verified_rounded
+      },
+      {
+        'status': 'completed_archive',
+        'label': l10n.statusArchived,
+        'desc': l10n.isKhmer ? 'បានរក្សាទុកក្នុងបណ្ណសារដោយសុវត្ថិភាព' : 'Stored securely in records',
+        'icon': Icons.archive_rounded
+      },
     ];
 
     int currentIndex = statuses.indexWhere((s) => s['status'] == document.status);
@@ -39,7 +76,7 @@ class DocumentStatusTimeline extends StatelessWidget {
               Icon(Icons.track_changes_rounded, color: colorScheme.primary, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Tracking Status',
+                l10n.trackingStatus,
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,

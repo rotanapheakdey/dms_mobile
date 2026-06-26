@@ -35,6 +35,16 @@ class DocumentService {
   /// NOTE: The API does not expose GET /documents/{id}, so we fetch the list
   /// and filter. Falls back to urgent/inbox feeds if not found.
   Future<Document?> getDocument(int id) async {
+    try {
+      final response = await _api.get('/documents/$id');
+      if (!response.containsKey('error')) {
+        final json = response['document'] ?? response['data'] ?? response;
+        return Document.fromJson(json);
+      }
+    } catch (_) {
+      // Fall back if direct fetch fails
+    }
+
     // Try the full document list first
     final all = await getAllDocuments();
     final found = all.where((d) => d.id == id).toList();
@@ -49,6 +59,16 @@ class DocumentService {
     final inbox = await getInbox();
     final inboxFound = inbox.where((d) => d.id == id).toList();
     if (inboxFound.isNotEmpty) return inboxFound.first;
+
+    // Fallback: search archive
+    try {
+      final archiveResult = await searchArchive('');
+      final List<dynamic> archiveDocs = archiveResult['documents'] ?? [];
+      final archiveFound = archiveDocs.where((d) => d.id == id).toList();
+      if (archiveFound.isNotEmpty) return archiveFound.first;
+    } catch (_) {
+      // Ignore archive search errors
+    }
 
     return null;
   }
