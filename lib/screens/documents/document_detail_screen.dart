@@ -988,9 +988,9 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     // 1. DG Assignment Signature: visible to everyone once assigned (status is not pending_dg_init)
     final showDgAssign = doc.status != 'pending_dg_init';
 
-    // 2. VDG Signature: visible to dg and file_dept when status is pending_dg_approval, dg_signed, or completed_archive
-    final isDgOrFileDept = user?.role == 'dg' || user?.role == 'file_dept';
-    final showVdgSign = isDgOrFileDept &&
+    // 2. VDG Signature: visible to vdg, dg, and file_dept when status is pending_dg_approval, dg_signed, or completed_archive
+    final isVdgDgOrFileDept = user?.role == 'vdg' || user?.role == 'dg' || user?.role == 'file_dept';
+    final showVdgSign = isVdgDgOrFileDept &&
         (doc.status == 'pending_dg_approval' ||
             doc.status == 'dg_signed' ||
             doc.status == 'completed_archive');
