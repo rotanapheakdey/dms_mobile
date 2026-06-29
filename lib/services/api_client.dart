@@ -124,7 +124,16 @@ class ApiClient {
     if (response.statusCode == 200) {
       return {'success': true, 'data': response.bodyBytes};
     }
-    return {'error': true, 'message': 'Download failed'};
+
+    String errorMessage = 'Download failed (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && decoded.containsKey('message')) {
+        errorMessage = decoded['message'];
+      }
+    } catch (_) {}
+
+    return {'error': true, 'message': errorMessage, 'statusCode': response.statusCode};
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
