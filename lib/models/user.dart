@@ -6,6 +6,7 @@ class User {
   final int? departmentId;
   final String? departmentName;
   final String? avatarUrl;
+  final String? signatureUrl;
 
   User({
     required this.id,
@@ -15,6 +16,7 @@ class User {
     this.departmentId,
     this.departmentName,
     this.avatarUrl,
+    this.signatureUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class User {
       departmentId: json['department_id'],
       departmentName: json['department']?['name'] ?? json['department_name'],
       avatarUrl: json['avatar_url'] ?? json['avatar'],
+      signatureUrl: json['signature_url'] ?? json['signature'],
     );
   }
 
@@ -37,6 +40,7 @@ class User {
     'department_id': departmentId,
     'department_name': departmentName,
     'avatar_url': avatarUrl,
+    'signature_url': signatureUrl,
   };
 
   bool get isFileDept => role == 'file_dept';
@@ -68,7 +72,9 @@ class User {
     String? name,
     String? email,
     String? avatarUrl,
+    String? signatureUrl,
     bool clearAvatar = false,
+    bool clearSignature = false,
   }) {
     return User(
       id: id,
@@ -78,6 +84,7 @@ class User {
       departmentId: departmentId,
       departmentName: departmentName,
       avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
+      signatureUrl: clearSignature ? null : (signatureUrl ?? this.signatureUrl),
     );
   }
 }

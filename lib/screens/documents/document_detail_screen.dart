@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/document.dart';
@@ -13,6 +14,7 @@ import '../widget/common/loading_indicator.dart';
 import '../widget/common/status_badge.dart';
 import '../widget/document/document_action_buttons.dart';
 import '../widget/document/document_status_timeline.dart';
+import 'pdf_signature_overlay_screen.dart';
 
 class DocumentDetailScreen extends StatefulWidget {
   final int documentId;
@@ -149,10 +151,61 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     );
 
     if (result != null && mounted) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if (auth.user?.signatureUrl == null) {
+        _showNoSignatureDialog(context);
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      Map<String, dynamic>? coords;
+      try {
+        final downloadRes = await _service.downloadFile(documentId);
+        if (mounted) Navigator.pop(context); // Dismiss loading spinner
+
+        if (downloadRes.containsKey('error')) {
+          throw Exception(downloadRes['message'] ?? 'Download failed');
+        }
+
+        final bytes = Uint8List.fromList(List<int>.from(downloadRes['data']));
+        if (mounted) {
+          coords = await Navigator.push<Map<String, dynamic>>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PdfSignatureOverlayScreen(
+                pdfBytes: bytes,
+                signatureSource: auth.user!.signatureUrl!,
+                isSignatureUrl: true,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.pop(context); // Dismiss loading spinner
+          messenger.showSnackBar(
+            SnackBar(content: Text('Failed to load PDF for signing: $e'), backgroundColor: errorColor),
+          );
+        }
+        return;
+      }
+
+      if (coords == null) return; // User cancelled signature placement
+
       final success = await docProvider.assignDocument(
         id: documentId,
         departmentId: result['assigned_department_id'],
         note: result['dg_note'],
+        x: coords['x'],
+        y: coords['y'],
+        width: coords['width'],
+        height: coords['height'],
+        page: coords['page'],
       );
 
       if (success) {
@@ -189,9 +242,60 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     );
 
     if (result != null && mounted) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if (auth.user?.signatureUrl == null) {
+        _showNoSignatureDialog(context);
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      Map<String, dynamic>? coords;
+      try {
+        final downloadRes = await _service.downloadFile(documentId);
+        if (mounted) Navigator.pop(context); // Dismiss loading spinner
+
+        if (downloadRes.containsKey('error')) {
+          throw Exception(downloadRes['message'] ?? 'Download failed');
+        }
+
+        final bytes = Uint8List.fromList(List<int>.from(downloadRes['data']));
+        if (mounted) {
+          coords = await Navigator.push<Map<String, dynamic>>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PdfSignatureOverlayScreen(
+                pdfBytes: bytes,
+                signatureSource: auth.user!.signatureUrl!,
+                isSignatureUrl: true,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.pop(context); // Dismiss loading spinner
+          messenger.showSnackBar(
+            SnackBar(content: Text('Failed to load PDF for signing: $e'), backgroundColor: errorColor),
+          );
+        }
+        return;
+      }
+
+      if (coords == null) return; // User cancelled signature placement
+
       final success = await docProvider.dispatchDocument(
         id: documentId,
         comment: result,
+        x: coords['x'],
+        y: coords['y'],
+        width: coords['width'],
+        height: coords['height'],
+        page: coords['page'],
       );
 
       if (success) {
@@ -281,9 +385,64 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     );
 
     if (confirm == true && mounted) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if (auth.user?.signatureUrl == null) {
+        _showNoSignatureDialog(context);
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
       final messenger = ScaffoldMessenger.of(context);
       final docProvider = Provider.of<DocumentProvider>(context, listen: false);
-      final success = await docProvider.signDocument(documentId, true);
+      Map<String, dynamic>? coords;
+
+      try {
+        final downloadRes = await _service.downloadReportFile(documentId);
+        if (mounted) Navigator.pop(context); // Dismiss loading spinner
+
+        if (downloadRes.containsKey('error')) {
+          throw Exception(downloadRes['message'] ?? 'Download failed');
+        }
+
+        final bytes = Uint8List.fromList(List<int>.from(downloadRes['data']));
+        if (mounted) {
+          coords = await Navigator.push<Map<String, dynamic>>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PdfSignatureOverlayScreen(
+                pdfBytes: bytes,
+                signatureSource: auth.user!.signatureUrl!,
+                isSignatureUrl: true,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.pop(context);
+          messenger.showSnackBar(
+            SnackBar(content: Text('Failed to load report PDF for signing: $e'), backgroundColor: colorScheme.error),
+          );
+        }
+        return;
+      }
+
+      if (coords == null) return; // User cancelled signature placement
+
+      final success = await docProvider.signDocument(
+        id: documentId,
+        isVdg: true,
+        x: coords['x'],
+        y: coords['y'],
+        width: coords['width'],
+        height: coords['height'],
+        page: coords['page'],
+      );
 
       if (success) {
         messenger.showSnackBar(
@@ -333,9 +492,64 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     );
 
     if (confirm == true && mounted) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if (auth.user?.signatureUrl == null) {
+        _showNoSignatureDialog(context);
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
       final messenger = ScaffoldMessenger.of(context);
       final docProvider = Provider.of<DocumentProvider>(context, listen: false);
-      final success = await docProvider.signDocument(documentId, false);
+      Map<String, dynamic>? coords;
+
+      try {
+        final downloadRes = await _service.downloadReportFile(documentId);
+        if (mounted) Navigator.pop(context); // Dismiss loading spinner
+
+        if (downloadRes.containsKey('error')) {
+          throw Exception(downloadRes['message'] ?? 'Download failed');
+        }
+
+        final bytes = Uint8List.fromList(List<int>.from(downloadRes['data']));
+        if (mounted) {
+          coords = await Navigator.push<Map<String, dynamic>>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PdfSignatureOverlayScreen(
+                pdfBytes: bytes,
+                signatureSource: auth.user!.signatureUrl!,
+                isSignatureUrl: true,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.pop(context);
+          messenger.showSnackBar(
+            SnackBar(content: Text('Failed to load report PDF for signing: $e'), backgroundColor: colorScheme.error),
+          );
+        }
+        return;
+      }
+
+      if (coords == null) return; // User cancelled signature placement
+
+      final success = await docProvider.signDocument(
+        id: documentId,
+        isVdg: false,
+        x: coords['x'],
+        y: coords['y'],
+        width: coords['width'],
+        height: coords['height'],
+        page: coords['page'],
+      );
 
       if (success) {
         messenger.showSnackBar(
@@ -357,6 +571,25 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
         );
       }
     }
+  }
+
+  void _showNoSignatureDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Signature Required'),
+        content: const Text(
+          'You must register a digital signature on your profile before signing documents. '
+          'Please navigate to Profile -> Edit Profile to draw your signature.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ─── ARCHIVE DOCUMENT ───

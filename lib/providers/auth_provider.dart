@@ -163,6 +163,67 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Upload new signature — POST /users/{id}/signature
+  Future<bool> updateSignature(String signaturePath) async {
+    if (_user == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _userService.updateSignature(
+        id: _user!.id,
+        signaturePath: signaturePath,
+      );
+
+      if (response.containsKey('error')) {
+        _errorMessage = response['message'] ?? 'Signature update failed';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // Refresh user to get new signature_url from server
+      final refreshed = await _userService.getUser(_user!.id);
+      if (refreshed != null) _user = refreshed;
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Remove signature — DELETE /users/{id}/signature
+  Future<bool> removeSignature() async {
+    if (_user == null) return false;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _userService.removeSignature(_user!.id);
+      if (response.containsKey('error')) {
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+      _user = _user!.copyWith(clearSignature: true);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   bool hasPermission(String action) {
     if (_user == null) return false;
 

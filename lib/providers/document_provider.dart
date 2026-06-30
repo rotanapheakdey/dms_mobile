@@ -203,6 +203,11 @@ class DocumentProvider extends ChangeNotifier {
     required int id,
     required int departmentId,
     String? note,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+    int? page,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -213,6 +218,11 @@ class DocumentProvider extends ChangeNotifier {
         id: id,
         departmentId: departmentId,
         note: note,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+        page: page,
       );
 
       if (error == null) {
@@ -235,6 +245,11 @@ class DocumentProvider extends ChangeNotifier {
   Future<bool> dispatchDocument({
     required int id,
     String? comment,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+    int? page,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -244,6 +259,11 @@ class DocumentProvider extends ChangeNotifier {
       final error = await _service.dispatchDocument(
         id: id,
         comment: comment,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+        page: page,
       );
 
       if (error == null) {
@@ -294,13 +314,29 @@ class DocumentProvider extends ChangeNotifier {
   }
 
   // ✅ PHASE 5 & 6: SIGN → POST /documents/{id}/vdg-sign or dg-sign
-  Future<bool> signDocument(int id, bool isVdg) async {
+  Future<bool> signDocument({
+    required int id,
+    required bool isVdg,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+    int? page,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final error = await _service.signDocument(id, isVdg);
+      final error = await _service.signDocument(
+        id: id,
+        isVdg: isVdg,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+        page: page,
+      );
 
       if (error == null) {
         await loadUrgent();

@@ -94,9 +94,21 @@ class DocumentService {
     required int id,
     required int departmentId,
     String? note,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+    int? page,
   }) async {
     final body = <String, dynamic>{'assigned_department_id': departmentId};
     if (note != null && note.isNotEmpty) body['dg_note'] = note;
+    if (x != null) {
+      body['x'] = x;
+      body['y'] = y;
+      body['width'] = width;
+      body['height'] = height;
+      body['page'] = page;
+    }
     final response = await _api.post('/documents/$id/direct', body: body);
     return response.containsKey('error')
         ? (response['message'] ?? 'Assignment failed')
@@ -107,9 +119,24 @@ class DocumentService {
   Future<String?> dispatchDocument({
     required int id,
     String? comment,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+    int? page,
   }) async {
     final body = <String, dynamic>{};
-    if (comment != null && comment.isNotEmpty) body['comment'] = comment;
+    if (comment != null && comment.isNotEmpty) {
+      body['comment'] = comment;
+      body['additional_comment'] = comment;
+    }
+    if (x != null) {
+      body['x'] = x;
+      body['y'] = y;
+      body['width'] = width;
+      body['height'] = height;
+      body['page'] = page;
+    }
     final response = await _api.post('/documents/$id/dispatch', body: body);
     return response.containsKey('error')
         ? (response['message'] ?? 'Dispatch failed')
@@ -134,9 +161,25 @@ class DocumentService {
 
   // Phase 5: VDG Sign → POST /documents/{id}/vdg-sign
   // Phase 6: DG Final Sign → POST /documents/{id}/dg-sign
-  Future<String?> signDocument(int id, bool isVdg) async {
+  Future<String?> signDocument({
+    required int id,
+    required bool isVdg,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+    int? page,
+  }) async {
     final endpoint = '/documents/$id/${isVdg ? 'vdg' : 'dg'}-sign';
-    final response = await _api.post(endpoint);
+    final body = <String, dynamic>{};
+    if (x != null) {
+      body['x'] = x;
+      body['y'] = y;
+      body['width'] = width;
+      body['height'] = height;
+      body['page'] = page;
+    }
+    final response = await _api.post(endpoint, body: body.isEmpty ? null : body);
     return response.containsKey('error')
         ? (response['message'] ?? 'Signature failed')
         : null;

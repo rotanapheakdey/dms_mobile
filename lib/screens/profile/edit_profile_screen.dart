@@ -6,6 +6,7 @@ import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../config/app_config.dart';
+import 'widgets/signature_pad_dialog.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -535,6 +536,131 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                         value: user?.departmentName ?? l10n.notAssigned,
                         color: colorScheme.secondary,
                         colorScheme: colorScheme,
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // ─── Digital Signature Section ───
+                      _buildSectionLabel('Digital Signature', colorScheme, icon: Icons.gesture_rounded),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (user?.signatureUrl != null) ...[
+                              Text(
+                                'Your Current Signature:',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    user!.signatureUrl!,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Center(child: Text('Failed to load signature preview'));
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ] else ...[
+                              Container(
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surfaceContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'No signature registered yet.',
+                                    style: TextStyle(fontStyle: FontStyle.italic),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: _isSaving ? null : () async {
+                                    final path = await showDialog<String>(
+                                      context: context,
+                                      builder: (context) => const SignaturePadDialog(),
+                                    );
+                                    if (path != null) {
+                                      setState(() {
+                                        _isSaving = true;
+                                      });
+                                      final success = await auth.updateSignature(path);
+                                      setState(() {
+                                        _isSaving = false;
+                                      });
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(success ? 'Signature saved successfully!' : 'Failed to save signature'),
+                                            backgroundColor: success ? Colors.green : Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.draw_rounded),
+                                  label: Text(user?.signatureUrl != null ? 'Re-draw Signature' : 'Draw Signature'),
+                                ),
+                                if (user?.signatureUrl != null)
+                                  OutlinedButton.icon(
+                                    onPressed: _isSaving ? null : () async {
+                                      setState(() {
+                                        _isSaving = true;
+                                      });
+                                      final success = await auth.removeSignature();
+                                      setState(() {
+                                        _isSaving = false;
+                                      });
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(success ? 'Signature removed successfully!' : 'Failed to remove signature'),
+                                            backgroundColor: success ? Colors.green : Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.delete_forever_rounded),
+                                    label: const Text('Delete'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: colorScheme.error,
+                                      side: BorderSide(color: colorScheme.error),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
 
                       const SizedBox(height: 28),

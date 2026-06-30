@@ -67,4 +67,22 @@ class UserService {
   Future<Map<String, dynamic>> removeAvatar(int id) async {
     return await _api.delete('/users/$id/avatar');
   }
+
+  /// POST /users/{id}/signature — update signature drawing
+  Future<Map<String, dynamic>> updateSignature({
+    required int id,
+    required String signaturePath,
+  }) async {
+    return await _api.multipart(
+      '/users/$id/signature',
+      {},
+      'signature',
+      signaturePath,
+    );
+  }
+
+  /// DELETE /users/{id}/signature — remove signature
+  Future<Map<String, dynamic>> removeSignature(int id) async {
+    return await _api.delete('/users/$id/signature');
+  }
 }
