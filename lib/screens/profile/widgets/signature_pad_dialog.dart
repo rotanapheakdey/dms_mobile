@@ -88,13 +88,13 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
                 borderRadius: BorderRadius.circular(12),
                 child: RepaintBoundary(
                   key: _boundaryKey,
-                  child: GestureDetector(
-                    onPanStart: (details) {
+                  child: Listener(
+                    onPointerDown: (details) {
                       setState(() {
                         _points.add(details.localPosition);
                       });
                     },
-                    onPanUpdate: (details) {
+                    onPointerMove: (details) {
                       setState(() {
                         // Keep within box bounds
                         if (details.localPosition.dx >= 0 &&
@@ -104,7 +104,7 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
                         }
                       });
                     },
-                    onPanEnd: (details) {
+                    onPointerUp: (details) {
                       setState(() {
                         _points.add(null);
                       });
