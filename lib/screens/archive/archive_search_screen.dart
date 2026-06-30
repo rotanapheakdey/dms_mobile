@@ -501,25 +501,29 @@ class _ArchiveSearchScreenState extends State<ArchiveSearchScreen> {
                       children: [
                         // Card Header Row: Control No + Status Badge
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                doc.controlNo,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontFamily: 'monospace',
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                  color: colorScheme.onSurfaceVariant,
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  doc.controlNo,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 8),
                             StatusBadge(status: doc.status, small: true),
                           ],
                         ),
@@ -631,6 +635,7 @@ class _ArchiveSearchScreenState extends State<ArchiveSearchScreen> {
   // ─── META CHIP WIDGET ───
   Widget _buildMetaChip(IconData icon, String text, Color iconColor, ColorScheme colorScheme) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 160),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -641,12 +646,16 @@ class _ArchiveSearchScreenState extends State<ArchiveSearchScreen> {
         children: [
           Icon(icon, size: 12, color: iconColor),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurfaceVariant,
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
