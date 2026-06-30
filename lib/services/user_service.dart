@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../models/user.dart';
 import 'api_client.dart';
 
@@ -71,13 +72,14 @@ class UserService {
   /// POST /users/{id}/signature — update signature drawing
   Future<Map<String, dynamic>> updateSignature({
     required int id,
-    required String signaturePath,
+    required Uint8List signatureBytes,
   }) async {
-    return await _api.multipart(
+    return await _api.multipartFromBytes(
       '/users/$id/signature',
       {},
       'signature',
-      signaturePath,
+      signatureBytes,
+      'signature.png',
     );
   }
 

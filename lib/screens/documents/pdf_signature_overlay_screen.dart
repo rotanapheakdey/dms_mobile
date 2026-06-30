@@ -275,10 +275,12 @@ class _PdfSignatureOverlayScreenState extends State<PdfSignatureOverlayScreen> {
                                                                   widget.signatureSource,
                                                                   fit: BoxFit.contain,
                                                                 )
-                                                              : Image.file(
-                                                                  File(widget.signatureSource),
-                                                                  fit: BoxFit.contain,
-                                                                ),
+                                                              : kIsWeb
+                                                                  ? const SizedBox()
+                                                                  : Image.file(
+                                                                      File(widget.signatureSource),
+                                                                      fit: BoxFit.contain,
+                                                                    ),
                                                         ),
                                                         Positioned(
                                                           right: 2,

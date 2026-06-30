@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
@@ -164,7 +165,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Upload new signature — POST /users/{id}/signature
-  Future<bool> updateSignature(String signaturePath) async {
+  Future<bool> updateSignature(Uint8List signatureBytes) async {
     if (_user == null) return false;
 
     _isLoading = true;
@@ -174,7 +175,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await _userService.updateSignature(
         id: _user!.id,
-        signaturePath: signaturePath,
+        signatureBytes: signatureBytes,
       );
 
       if (response.containsKey('error')) {

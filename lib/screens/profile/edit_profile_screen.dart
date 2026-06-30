@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -606,15 +607,15 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                               children: [
                                 ElevatedButton.icon(
                                   onPressed: _isSaving ? null : () async {
-                                    final path = await showDialog<String>(
+                                    final bytes = await showDialog<Uint8List>(
                                       context: context,
                                       builder: (context) => const SignaturePadDialog(),
                                     );
-                                    if (path != null) {
+                                    if (bytes != null) {
                                       setState(() {
                                         _isSaving = true;
                                       });
-                                      final success = await auth.updateSignature(path);
+                                      final success = await auth.updateSignature(bytes);
                                       setState(() {
                                         _isSaving = false;
                                       });

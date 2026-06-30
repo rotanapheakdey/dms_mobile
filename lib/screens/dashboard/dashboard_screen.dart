@@ -179,16 +179,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           ],
         ),
       ),
-      floatingActionButton: auth.canUpload
-          ? FloatingActionButton.extended(
-              onPressed: () => Navigator.pushNamed(context, '/upload'),
-              tooltip: context.l10n.uploadDocument,
-              backgroundColor: accentColor,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.upload_file_rounded),
-              label: Text(context.l10n.uploadDocument),
-            )
-          : null,
+      floatingActionButton: null,
     );
   }
 

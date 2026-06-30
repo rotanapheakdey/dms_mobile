@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
@@ -80,6 +81,32 @@ class ApiClient {
 
     request.fields.addAll(fields);
     request.files.add(await http.MultipartFile.fromPath(fileKey, filePath));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> multipartFromBytes(
+    String endpoint,
+    Map<String, String> fields,
+    String fileKey,
+    Uint8List fileBytes,
+    String filename,
+  ) async {
+    final token = await storage.read(key: AppConfig.tokenKey);
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
+
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    request.fields.addAll(fields);
+    request.files.add(http.MultipartFile.fromBytes(
+      fileKey,
+      fileBytes,
+      filename: filename,
+    ));
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);

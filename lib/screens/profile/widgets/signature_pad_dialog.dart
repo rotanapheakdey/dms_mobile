@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:path_provider/path_provider.dart';
 
 class SignaturePadDialog extends StatefulWidget {
   const SignaturePadDialog({super.key});
@@ -38,12 +36,9 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
       if (byteData == null) return;
 
       final buffer = byteData.buffer.asUint8List();
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
-      await file.writeAsBytes(buffer);
 
       if (mounted) {
-        Navigator.of(context).pop(file.path);
+        Navigator.of(context).pop(buffer);
       }
     } catch (e) {
       if (kDebugMode) print('Error saving signature: $e');
