@@ -36,6 +36,8 @@ class _PdfSignatureOverlayScreenState extends State<PdfSignatureOverlayScreen> {
   double _sigY = 200.0;
   final double _sigWidth = 120.0;
   final double _sigHeight = 60.0;
+  double _lastContainerWidth = 300.0;
+  double _lastContainerHeight = 500.0;
 
   @override
   void initState() {
@@ -130,9 +132,7 @@ class _PdfSignatureOverlayScreenState extends State<PdfSignatureOverlayScreen> {
         actions: [
           if (!_isLoading && _pageImageBytes != null)
             TextButton.icon(
-              onPressed: () {
-                // Confirm will be triggered from the LayoutBuilder dimensions
-              },
+              onPressed: () => _onConfirm(_lastContainerWidth, _lastContainerHeight),
               icon: const Icon(Icons.check_circle),
               label: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
               style: TextButton.styleFrom(
@@ -196,15 +196,15 @@ class _PdfSignatureOverlayScreenState extends State<PdfSignatureOverlayScreen> {
                               : LayoutBuilder(
                                   builder: (context, constraints) {
                                     // Calculate aspect ratio fit of the PDF page in the available space
-                                    final double maxW = constraints.maxWidth - 32;
-                                    final double maxH = constraints.maxHeight - 32;
-
+                                    final double maxW = (constraints.maxWidth - 32).clamp(100.0, double.infinity);
+                                    final double maxH = (constraints.maxHeight - 110).clamp(100.0, double.infinity);
+ 
                                     final double pdfRatio = _pdfPageWidth / _pdfPageHeight;
                                     final double screenRatio = maxW / maxH;
-
+ 
                                     double containerWidth;
                                     double containerHeight;
-
+ 
                                     if (pdfRatio > screenRatio) {
                                       // Fit to width
                                       containerWidth = maxW;
@@ -214,6 +214,9 @@ class _PdfSignatureOverlayScreenState extends State<PdfSignatureOverlayScreen> {
                                       containerHeight = maxH;
                                       containerWidth = maxH * pdfRatio;
                                     }
+ 
+                                    _lastContainerWidth = containerWidth;
+                                    _lastContainerHeight = containerHeight;
 
                                     return Center(
                                       child: Column(

@@ -91,6 +91,7 @@ class AuthProvider extends ChangeNotifier {
           avatarUrl: avatarPath,
         );
       }
+      await _authService.saveUser(_user!);
 
       _isLoading = false;
       notifyListeners();
@@ -187,7 +188,10 @@ class AuthProvider extends ChangeNotifier {
 
       // Refresh user to get new signature_url from server
       final refreshed = await _userService.getUser(_user!.id);
-      if (refreshed != null) _user = refreshed;
+      if (refreshed != null) {
+        _user = refreshed;
+        await _authService.saveUser(_user!);
+      }
 
       _isLoading = false;
       notifyListeners();

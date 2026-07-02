@@ -193,6 +193,18 @@ class DocumentService {
         : null;
   }
 
+  // Reject Report → POST /documents/{id}/reject
+  Future<String?> rejectDocument({
+    required int id,
+    required String notes,
+  }) async {
+    final body = <String, dynamic>{'notes': notes};
+    final response = await _api.post('/documents/$id/reject', body: body);
+    return response.containsKey('error')
+        ? (response['message'] ?? 'Rejection failed')
+        : null;
+  }
+
   // ===================== UTILS & SEARCH =====================
 
   /// GET /documents/archive?search=query
@@ -225,6 +237,11 @@ class DocumentService {
   /// GET /documents/{id}/report/download — returns raw bytes for action report
   Future<Map<String, dynamic>> downloadReportFile(int id) async {
     return await _api.downloadFile('/documents/$id/report/download');
+  }
+
+  /// GET /documents/{id}/directive/download — returns raw bytes for directive verification slip
+  Future<Map<String, dynamic>> downloadDirectiveFile(int id) async {
+    return await _api.downloadFile('/documents/$id/directive/download');
   }
 
   /// GET /departments — list all departments for assignment dialog

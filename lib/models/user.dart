@@ -1,3 +1,5 @@
+import '../config/app_config.dart';
+
 class User {
   final int id;
   final String name;
@@ -20,6 +22,8 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final avatar = json['avatar_url'] ?? json['avatar'];
+    final signature = json['signature_url'] ?? json['signature'];
     return User(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
@@ -27,9 +31,30 @@ class User {
       role: json['role'] ?? '',
       departmentId: json['department_id'],
       departmentName: json['department']?['name'] ?? json['department_name'],
-      avatarUrl: json['avatar_url'] ?? json['avatar'],
-      signatureUrl: json['signature_url'] ?? json['signature'],
+      avatarUrl: _normalizeUrl(avatar),
+      signatureUrl: _normalizeUrl(signature),
     );
+  }
+
+  static String? _normalizeUrl(String? urlString) {
+    if (urlString == null) return null;
+    try {
+      final uri = Uri.tryParse(AppConfig.apiBaseUrl);
+      if (uri == null) return urlString;
+      
+      final baseHost = '${uri.scheme}://${uri.host}${uri.hasPort ? ":${uri.port}" : ""}';
+      
+      if (urlString.startsWith('http://localhost') || urlString.startsWith('https://localhost')) {
+        return urlString.replaceFirst(RegExp(r'https?://localhost'), baseHost);
+      }
+      if (urlString.startsWith('http://127.0.0.1') || urlString.startsWith('https://127.0.0.1')) {
+        return urlString.replaceFirst(RegExp(r'https?://127\.0\.0\.1'), baseHost);
+      }
+      if (urlString.startsWith('/')) {
+        return '$baseHost$urlString';
+      }
+    } catch (_) {}
+    return urlString;
   }
 
   Map<String, dynamic> toJson() => {

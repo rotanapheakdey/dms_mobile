@@ -379,6 +379,37 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
+  // ✅ REJECT REPORT → POST /documents/{id}/reject
+  Future<bool> rejectDocument({
+    required int id,
+    required String notes,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final error = await _service.rejectDocument(
+        id: id,
+        notes: notes,
+      );
+
+      if (error == null) {
+        await loadUrgent();
+        await loadDocument(id);
+        return true;
+      }
+      _errorMessage = error;
+      return false;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // ✅ DOWNLOAD FILE → GET /documents/{id}/download
   Future<Map<String, dynamic>> downloadFile(int id) async {
     return await _service.downloadFile(id);

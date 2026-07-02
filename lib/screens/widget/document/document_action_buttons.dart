@@ -11,6 +11,7 @@ class DocumentActionButtons extends StatelessWidget {
   final VoidCallback onVDGSign;
   final VoidCallback onDGSign;
   final VoidCallback onArchive;
+  final VoidCallback onReject;
 
   const DocumentActionButtons({
     super.key,
@@ -22,6 +23,7 @@ class DocumentActionButtons extends StatelessWidget {
     required this.onVDGSign,
     required this.onDGSign,
     required this.onArchive,
+    required this.onReject,
   });
 
   @override
@@ -61,12 +63,28 @@ class DocumentActionButtons extends StatelessWidget {
     }
 
     if (status == 'pending_vdg_approval' && userRole == 'vdg') {
-      return _buildActionButton(
-        context,
-        label: l10n.signVDG,
-        icon: Icons.draw_rounded,
-        onPressed: onVDGSign,
-        color: Colors.purple.shade600,
+      return Row(
+        children: [
+          Expanded(
+            child: _buildActionButton(
+              context,
+              label: 'Reject Report',
+              icon: Icons.cancel_rounded,
+              onPressed: onReject,
+              color: Colors.red.shade700,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildActionButton(
+              context,
+              label: l10n.signVDG,
+              icon: Icons.draw_rounded,
+              onPressed: onVDGSign,
+              color: Colors.purple.shade600,
+            ),
+          ),
+        ],
       );
     }
 
@@ -105,7 +123,7 @@ class DocumentActionButtons extends StatelessWidget {
       child: FilledButton.icon(
         onPressed: onPressed,
         icon: Icon(icon, size: 20),
-        label: Text(label),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         style: FilledButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,

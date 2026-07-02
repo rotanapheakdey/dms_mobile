@@ -12,6 +12,7 @@ class Document {
   final DateTime updatedAt;
   final String? dgNote;
   final String? dispatchComment;
+  final String? directiveFilePath;
   final DateTime? vdgSignedAt;
   final DateTime? dgSignedAt;
   final DateTime? dgAssignedAt;
@@ -30,6 +31,7 @@ class Document {
     required this.updatedAt,
     this.dgNote,
     this.dispatchComment,
+    this.directiveFilePath,
     this.vdgSignedAt,
     this.dgSignedAt,
     this.dgAssignedAt,
@@ -50,6 +52,7 @@ class Document {
       updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
       dgNote: json['dg_note'],
       dispatchComment: json['dispatch_comment'],
+      directiveFilePath: json['directive_file_path'],
       vdgSignedAt: json['vdg_signed_at'] != null ? DateTime.tryParse(json['vdg_signed_at']) : null,
       dgSignedAt: json['dg_signed_at'] != null ? DateTime.tryParse(json['dg_signed_at']) : null,
       dgAssignedAt: json['assigned_at'] != null ? DateTime.tryParse(json['assigned_at']) : null,

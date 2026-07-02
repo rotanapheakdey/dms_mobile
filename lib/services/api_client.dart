@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
 import '../utils/navigation_service.dart';
@@ -106,6 +107,7 @@ class ApiClient {
       fileKey,
       fileBytes,
       filename: filename,
+      contentType: MediaType('image', 'png'),
     ));
 
     final streamedResponse = await request.send();

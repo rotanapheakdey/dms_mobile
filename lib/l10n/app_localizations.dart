@@ -97,45 +97,45 @@ class AppLocalizations {
   String get departmentActionReport => _t('Department Action Report', 'របាយការណ៍សកម្មភាពផ្នែក');
   String get commentsAndWorkflowNotes => _t('Comments & Workflow Notes', 'មតិយោបល់ & កំណត់ចំណាំការងារ');
   String get verificationAndSignatures => _t('Verification & Signatures', 'ការផ្ទៀងផ្ទាត់ & ហត្ថលេខា');
-  String get dgAssignmentSignature => _t('DG Assignment Signature', 'ហត្ថលេខាចាត់តាំងរបស់ DG');
-  String get vdgConfirmationSignature => _t('VDG Confirmation Signature', 'ហត្ថលេខាបញ្ជាក់របស់ VDG');
-  String get dgFinalApprovalSignature => _t('DG Final Approval Signature', 'ហត្ថលេខាអនុម័តចុងក្រោយរបស់ DG');
-  String get directedAndApproved => _t('Directed & Approved to Department', 'បានណែនាំ & អនុម័តទៅផ្នែក');
+  String get dgAssignmentSignature => _t('DG Assignment Signature', 'ហត្ថលេខាចាត់តាំងរបស់ អគ្គនាយក');
+  String get vdgConfirmationSignature => _t('VDG Confirmation Signature', 'ហត្ថលេខាបញ្ជាក់របស់ អគ្គនាយករង');
+  String get dgFinalApprovalSignature => _t('DG Final Approval Signature', 'ហត្ថលេខាអនុម័តចុងក្រោយរបស់ អគ្គនាយក');
+  String get directedAndApproved => _t('Directed & Approved to Department', 'បានណែនាំ & អនុម័តទៅនាយកដ្ឋាន');
   String get verifiedAndApprovedReport => _t('Verified & Approved Action Report', 'បានផ្ទៀងផ្ទាត់ & អនុម័តរបាយការណ៍');
   String get finalApprovalSigned => _t('Final Approval Signed & Granted', 'បានចុះហត្ថលេខា & ផ្តល់ការអនុម័តចុងក្រោយ');
-  String get fileDeptUploadComment => _t('File Dept Upload Comment', 'មតិយោបល់បញ្ចូលរបស់ផ្នែកឯកសារ');
+  String get fileDeptUploadComment => _t('File Dept Upload Comment', 'មតិយោបល់បញ្ចូលរបស់នាយកដ្ឋានឯកសារ');
   String get directorGeneralNote => _t('Director General Note', 'កំណត់ចំណាំរបស់អគ្គនាយក');
-  String get fileDeptDispatchComment => _t('File Dept Dispatch Comment', 'មតិយោបល់បញ្ជូនរបស់ផ្នែកឯកសារ');
+  String get fileDeptDispatchComment => _t('File Dept Dispatch Comment', 'មតិយោបល់បញ្ជូនរបស់នាយកដ្ឋានឯកសារ');
   String get directorGeneral => _t('Director General', 'អគ្គនាយក');
   String get viceDirectorGeneral => _t('Vice Director General', 'អគ្គនាយករង');
 
   // ─── DOCUMENT ACTIONS ───
-  String get assignDepartment => _t('Assign Department', 'ដាក់ភារៈទៅផ្នែក');
+  String get assignDepartment => _t('Assign Department', 'បញ្ជូនទៅកាន់នាយកដ្ឋាន');
   String get dispatch => _t('Dispatch', 'បញ្ជូន');
   String get uploadReport => _t('Upload Report', 'បញ្ចូលរបាយការណ៍');
-  String get signVDG => _t('Sign (VDG)', 'ចុះហត្ថលេខា (VDG)');
-  String get signDG => _t('Sign (DG)', 'ចុះហត្ថលេខា (DG)');
+  String get signVDG => _t('Sign (VDG)', 'ចុះហត្ថលេខា អគ្គនាយករង');
+  String get signDG => _t('Sign (DG)', 'ចុះហត្ថលេខា អគ្គនាយក');
   String get archive => _t('Archive', 'រក្សាទុក');
   String get downloadFile => _t('Download File', 'ទាញយកឯកសារ');
   String get viewFile => _t('View File', 'មើលឯកសារ');
   String get viewReport => _t('View Report', 'មើលរបាយការណ៍');
 
   // ─── DOCUMENT STATUS ───
-  String get statusPendingDGInit => _t('Pending DG Review', 'រង់ចាំការត្រួតពិនិត្យ DG');
+  String get statusPendingDGInit => _t('Pending DG Review', 'រង់ចាំការត្រួតពិនិត្យ អគ្គនាយក');
   String get statusPendingDispatch => _t('Pending Dispatch', 'រង់ចាំការបញ្ជូន');
-  String get statusDGDirected => _t('DG Directed', 'DG បានណែនាំ');
-  String get statusPendingVDGApproval => _t('Pending VDG Approval', 'រង់ចាំការយល់ព្រម VDG');
-  String get statusPendingDGApproval => _t('Pending DG Approval', 'រង់ចាំការយល់ព្រម DG');
-  String get statusDGSigned => _t('DG Signed', 'DG បានចុះហត្ថលេខា');
+  String get statusDGDirected => _t('DG Directed', 'អគ្គនាយក បានបញ្ជូន');
+  String get statusPendingVDGApproval => _t('Pending VDG Approval', 'រង់ចាំការយល់ព្រម អគ្គនាយករង');
+  String get statusPendingDGApproval => _t('Pending DG Approval', 'រង់ចាំការយល់ព្រម អគ្គនាយក');
+  String get statusDGSigned => _t('DG Signed', 'អគ្គនាយក បានចុះហត្ថលេខា');
   String get statusArchived => _t('Archived', 'រក្សាទុករួច');
   String get trackingStatus => _t('Tracking Status', 'តាមដានស្ថានភាព');
   String get sortNewestFirst => _t('Sort Newest First', 'តម្រៀបថ្មីបំផុតមុន');
   String get sortOldestFirst => _t('Sort Oldest First', 'តម្រៀបចាស់បំផុតមុន');
 
   // ─── ASSIGN DIALOG ───
-  String get assignDepartmentTitle => _t('Assign Department', 'ដាក់ភារៈទៅផ្នែក');
-  String get assignDepartmentSubtitle => _t('Select a department and optionally add a note.', 'ជ្រើសរើសផ្នែក ហើយបន្ថែមមតិបន្ថែម (ស្រេចចិត្ត)។');
-  String get selectDepartment => _t('Select Department', 'ជ្រើសរើសផ្នែក');
+  String get assignDepartmentTitle => _t('Assign Department', 'ដាក់ជូន ទៅកាន់នាយកដ្ឋាន');
+  String get assignDepartmentSubtitle => _t('Select a department and optionally add a note.', 'ជ្រើសរើសនាយកដ្ឋាន ហើយបន្ថែមមតិបន្ថែម (ស្រេចចិត្ត)។');
+  String get selectDepartment => _t('Select Department', 'ជ្រើសរើសនាយកដ្ឋាន');
   String get dgNoteOptional => _t('DG Note (Optional)', 'កំណត់ចំណាំ DG (ស្រេចចិត្ត)');
   String get assign => _t('Assign', 'ដាក់ភារៈ');
   String get assignSuccess => _t('Document assigned successfully!', 'ឯកសារត្រូវបានដាក់ភារៈជោគជ័យ!');
@@ -280,15 +280,15 @@ class AppLocalizations {
       case 'pending_dispatch':
         return _t('Pending Dispatch', 'រង់ចាំការបញ្ជូន');
       case 'dg_directed':
-        return _t('DG Directed', 'DG បានណែនាំ');
+        return _t('DG Directed', 'អគ្គនាយក ចាត់នាយកដ្ឋាន');
       case 'pending_vdg_approval':
-        return _t('VDG Approval', 'ការយល់ព្រម VDG');
+        return _t('VDG Approval', 'ការយល់ព្រម​ អគ្គនាយករង');
       case 'pending_dg_approval':
-        return _t('DG Approval', 'ការយល់ព្រម DG');
+        return _t('DG Approval', 'ការយល់ព្រម អគ្គនាយក');
       case 'dg_signed':
-        return _t('DG Signed', 'DG ចុះហត្ថលេខា');
+        return _t('DG Signed', 'អគ្គនាយក ចុះហត្ថលេខា');
       case 'completed_archive':
-        return _t('Archived', 'បណ្ណសារ');
+        return _t('Archived', 'បានរក្សាទុកឯកសារ');
       default:
         return status.replaceAll('_', ' ').toUpperCase();
     }

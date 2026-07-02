@@ -108,112 +108,114 @@ class _ReportUploadDialogState extends State<ReportUploadDialog> {
       ),
 
       // ─── Content ───
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 8),
-
-          // File Picker Zone
-          GestureDetector(
-            onTap: _pickFile,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: _selectedFile != null
-                    ? colorScheme.primaryContainer.withValues(alpha: 0.2)
-                    : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+  
+            // File Picker Zone
+            GestureDetector(
+              onTap: _pickFile,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
                   color: _selectedFile != null
-                      ? colorScheme.primary.withValues(alpha: 0.5)
-                      : colorScheme.outlineVariant,
+                      ? colorScheme.primaryContainer.withValues(alpha: 0.2)
+                      : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _selectedFile != null
+                        ? colorScheme.primary.withValues(alpha: 0.5)
+                        : colorScheme.outlineVariant,
+                  ),
                 ),
-              ),
-              child: _selectedFile != null
-                  ? Row(
-                      children: [
-                        Icon(
-                          Icons.description_rounded,
-                          color: colorScheme.primary,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _fileName ?? 'Unknown',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _formatFileSize(_fileSize ?? 0),
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
+                child: _selectedFile != null
+                    ? Row(
+                        children: [
+                          Icon(
+                            Icons.description_rounded,
+                            color: colorScheme.primary,
+                            size: 24,
                           ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.close_rounded, color: colorScheme.onSurfaceVariant),
-                          onPressed: () => setState(() {
-                            _selectedFile = null;
-                            _fileName = null;
-                            _fileSize = null;
-                          }),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Icon(Icons.cloud_upload_rounded, size: 36, color: colorScheme.primary.withValues(alpha: 0.7)),
-                        const SizedBox(height: 8),
-                        Text(
-                          l10n.tapToSelectFile,
-                          style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-
-          // Error Message
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(10),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _fileName ?? 'Unknown',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _formatFileSize(_fileSize ?? 0),
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close_rounded, color: colorScheme.onSurfaceVariant),
+                            onPressed: () => setState(() {
+                              _selectedFile = null;
+                              _fileName = null;
+                              _fileSize = null;
+                            }),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          Icon(Icons.cloud_upload_rounded, size: 36, color: colorScheme.primary.withValues(alpha: 0.7)),
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.tapToSelectFile,
+                            style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline_rounded, color: colorScheme.onErrorContainer, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _error!,
-                      style: TextStyle(
-                        color: colorScheme.onErrorContainer,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
+            ),
+  
+            // Error Message
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline_rounded, color: colorScheme.onErrorContainer, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: TextStyle(
+                          color: colorScheme.onErrorContainer,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
 
       // ─── Actions ───

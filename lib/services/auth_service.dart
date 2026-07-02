@@ -61,6 +61,15 @@ class AuthService {
     }
   }
 
+  Future<void> saveUser(User user) async {
+    try {
+      await _storage.write(
+        key: AppConfig.userKey,
+        value: jsonEncode(user.toJson()),
+      );
+    } catch (_) {}
+  }
+
   Future<String?> getToken() async {
     return await _storage.read(key: AppConfig.tokenKey);
   }

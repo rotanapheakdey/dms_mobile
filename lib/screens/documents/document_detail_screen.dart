@@ -163,50 +163,13 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
         builder: (_) => const Center(child: CircularProgressIndicator()),
       );
 
-      Map<String, dynamic>? coords;
-      try {
-        final downloadRes = await _service.downloadFile(documentId);
-        if (mounted) Navigator.pop(context); // Dismiss loading spinner
-
-        if (downloadRes.containsKey('error')) {
-          throw Exception(downloadRes['message'] ?? 'Download failed');
-        }
-
-        final bytes = Uint8List.fromList(List<int>.from(downloadRes['data']));
-        if (mounted) {
-          coords = await Navigator.push<Map<String, dynamic>>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PdfSignatureOverlayScreen(
-                pdfBytes: bytes,
-                signatureSource: auth.user!.signatureUrl!,
-                isSignatureUrl: true,
-              ),
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          Navigator.pop(context); // Dismiss loading spinner
-          messenger.showSnackBar(
-            SnackBar(content: Text('Failed to load PDF for signing: $e'), backgroundColor: errorColor),
-          );
-        }
-        return;
-      }
-
-      if (coords == null) return; // User cancelled signature placement
-
       final success = await docProvider.assignDocument(
         id: documentId,
         departmentId: result['assigned_department_id'],
         note: result['dg_note'],
-        x: coords['x'],
-        y: coords['y'],
-        width: coords['width'],
-        height: coords['height'],
-        page: coords['page'],
       );
+
+      if (mounted) Navigator.pop(context); // Dismiss loading spinner
 
       if (success) {
         messenger.showSnackBar(
@@ -644,6 +607,102 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     }
   }
 
+  // ─── REJECT DOCUMENT ───
+  Future<void> _showRejectDialog(BuildContext context, int documentId) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final notesController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reject Action Report'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Please provide a reason or correction instructions for the department staff.'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: notesController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Rejection Reason',
+                  hintText: 'Enter why you are rejecting this report...',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter a reason';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+            ),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final messenger = ScaffoldMessenger.of(context);
+      final docProvider = Provider.of<DocumentProvider>(context, listen: false);
+      final success = await docProvider.rejectDocument(
+        id: documentId,
+        notes: notesController.text.trim(),
+      );
+
+      if (mounted) Navigator.pop(context); // Dismiss loading spinner
+
+      if (success) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 12),
+                Text('Document rejected and sent back to staff.'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+          ),
+        );
+        setState(() => _document = docProvider.currentDocument);
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(docProvider.errorMessage ?? 'Failed to reject document'),
+            backgroundColor: colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
   // ─── BUILD ───
   @override
   Widget build(BuildContext context) {
@@ -859,6 +918,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                 onVDGSign: () => _signVDG(doc.id),
                 onDGSign: () => _signDG(doc.id),
                 onArchive: () => _archiveDocument(doc.id),
+                onReject: () => _showRejectDialog(context, doc.id),
               ),
 
               const SizedBox(height: 16),
@@ -996,9 +1056,51 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     }
   }
 
+  // ─── VIEW DIRECTIVE VERIFICATION FILE ───
+  Future<void> _viewDirectiveFile() async {
+    if (_document == null) return;
+    final l10n = context.l10n;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    
+    try {
+      final result = await _service.downloadDirectiveFile(_document!.id);
+      if (mounted) Navigator.pop(context); // Close loading dialog
+      
+      if (result['success'] == true) {
+        final filename = _document!.directiveFilePath?.split(RegExp(r'[/\\]')).last ?? 'verification_slip.pdf';
+        await viewPdfBytes(result['data'], filename);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? l10n.failedToLoad),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Close loading dialog
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.failedToLoad}: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   // ─── FILES SECTION ───
   Widget _buildFileSection(Document doc, dynamic user, ColorScheme colorScheme) {
     final showReport = doc.reportPath != null && doc.reportPath!.isNotEmpty;
+    final showDirective = doc.directiveFilePath != null && doc.directiveFilePath!.isNotEmpty;
     final isOrigPdf = _isPdf(doc.filePath);
     final isReportPdf = _isPdf(doc.reportPath);
 
@@ -1035,6 +1137,18 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             isPdf: isOrigPdf,
             colorScheme: colorScheme,
           ),
+          if (showDirective) ...[
+            const SizedBox(height: 12),
+            _buildFileCard(
+              title: 'Official Verification Slip',
+              filename: doc.directiveFilePath!.split(RegExp(r'[/\\]')).last,
+              icon: Icons.verified_user_rounded,
+              iconColor: Colors.blue.shade600,
+              onAction: _viewDirectiveFile,
+              isPdf: true,
+              colorScheme: colorScheme,
+            ),
+          ],
           if (showReport) ...[
             const SizedBox(height: 12),
             _buildFileCard(
@@ -1269,6 +1383,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               signerRole: context.l10n.directorGeneral,
               color: Colors.blue.shade600,
               colorScheme: colorScheme,
+              onTap: doc.directiveFilePath != null ? _viewDirectiveFile : null,
             ),
           if (showVdgSign) ...[
             if (showDgAssign) const SizedBox(height: 12),
@@ -1304,9 +1419,11 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     required String signerRole,
     required Color color,
     required ColorScheme colorScheme,
+    VoidCallback? onTap,
   }) {
     final formattedDate = _formatDateTime(timestamp);
-    return Container(
+    
+    Widget cardContent = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -1321,7 +1438,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.verified_rounded, color: color, size: 24),
+            child: Icon(onTap != null ? Icons.verified_user_rounded : Icons.verified_rounded, color: color, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1351,20 +1468,60 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              signerRole,
-              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
-            ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  signerRole,
+                  style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.visibility_rounded, size: 16, color: color),
+                    const SizedBox(width: 4),
+                    Text(
+                      'View',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ),
         ],
       ),
     );
+
+    if (onTap != null) {
+      return Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: cardContent,
+        ),
+      );
+    }
+
+    return cardContent;
   }
 
   // ─── INFO ROW ───
