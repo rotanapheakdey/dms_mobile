@@ -622,7 +622,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                                       if (mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
-                                            content: Text(success ? 'Signature saved successfully!' : 'Failed to save signature'),
+                                            content: Text(success 
+                                                ? 'Signature saved successfully!' 
+                                                : 'Failed to save signature: ${auth.errorMessage ?? "Unknown error"}'),
                                             backgroundColor: success ? Colors.green : Colors.red,
                                           ),
                                         );

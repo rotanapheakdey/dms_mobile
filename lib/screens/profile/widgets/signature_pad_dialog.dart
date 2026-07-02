@@ -28,6 +28,9 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
     });
 
     try {
+      // Small delay to ensure all paint operations have completed
+      await Future.delayed(const Duration(milliseconds: 50));
+
       final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
 
@@ -80,7 +83,6 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
               decoration: BoxDecoration(
                 border: Border.all(color: colorScheme.outlineVariant),
                 borderRadius: BorderRadius.circular(12),
-                color: Colors.white, // White drawing background
               ),
               height: 200,
               width: double.infinity,
@@ -88,13 +90,13 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
                 borderRadius: BorderRadius.circular(12),
                 child: RepaintBoundary(
                   key: _boundaryKey,
-                  child: Listener(
-                    onPointerDown: (details) {
+                  child: GestureDetector(
+                    onPanStart: (details) {
                       setState(() {
                         _points.add(details.localPosition);
                       });
                     },
-                    onPointerMove: (details) {
+                    onPanUpdate: (details) {
                       setState(() {
                         // Keep within box bounds
                         if (details.localPosition.dx >= 0 &&
@@ -104,14 +106,17 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
                         }
                       });
                     },
-                    onPointerUp: (details) {
+                    onPanEnd: (details) {
                       setState(() {
                         _points.add(null);
                       });
                     },
-                    child: CustomPaint(
-                      painter: SignaturePainter(points: _points, color: Colors.blue.shade900),
-                      size: Size.infinite,
+                    child: Container(
+                      color: Colors.white, // Draw white background inside boundary to avoid transparency bugs on emulators
+                      child: CustomPaint(
+                        painter: SignaturePainter(points: _points, color: Colors.blue.shade900),
+                        size: Size.infinite,
+                      ),
                     ),
                   ),
                 ),
