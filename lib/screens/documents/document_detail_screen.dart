@@ -362,50 +362,13 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
 
       final messenger = ScaffoldMessenger.of(context);
       final docProvider = Provider.of<DocumentProvider>(context, listen: false);
-      Map<String, dynamic>? coords;
-
-      try {
-        final downloadRes = await _service.downloadReportFile(documentId);
-        if (mounted) Navigator.pop(context); // Dismiss loading spinner
-
-        if (downloadRes.containsKey('error')) {
-          throw Exception(downloadRes['message'] ?? 'Download failed');
-        }
-
-        final bytes = Uint8List.fromList(List<int>.from(downloadRes['data']));
-        if (mounted) {
-          coords = await Navigator.push<Map<String, dynamic>>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PdfSignatureOverlayScreen(
-                pdfBytes: bytes,
-                signatureSource: auth.user!.signatureUrl!,
-                isSignatureUrl: true,
-              ),
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          Navigator.pop(context);
-          messenger.showSnackBar(
-            SnackBar(content: Text('Failed to load report PDF for signing: $e'), backgroundColor: colorScheme.error),
-          );
-        }
-        return;
-      }
-
-      if (coords == null) return; // User cancelled signature placement
 
       final success = await docProvider.signDocument(
         id: documentId,
         isVdg: true,
-        x: coords['x'],
-        y: coords['y'],
-        width: coords['width'],
-        height: coords['height'],
-        page: coords['page'],
       );
+
+      if (mounted) Navigator.pop(context); // Dismiss loading spinner
 
       if (success) {
         messenger.showSnackBar(
@@ -469,50 +432,13 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
 
       final messenger = ScaffoldMessenger.of(context);
       final docProvider = Provider.of<DocumentProvider>(context, listen: false);
-      Map<String, dynamic>? coords;
-
-      try {
-        final downloadRes = await _service.downloadReportFile(documentId);
-        if (mounted) Navigator.pop(context); // Dismiss loading spinner
-
-        if (downloadRes.containsKey('error')) {
-          throw Exception(downloadRes['message'] ?? 'Download failed');
-        }
-
-        final bytes = Uint8List.fromList(List<int>.from(downloadRes['data']));
-        if (mounted) {
-          coords = await Navigator.push<Map<String, dynamic>>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PdfSignatureOverlayScreen(
-                pdfBytes: bytes,
-                signatureSource: auth.user!.signatureUrl!,
-                isSignatureUrl: true,
-              ),
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          Navigator.pop(context);
-          messenger.showSnackBar(
-            SnackBar(content: Text('Failed to load report PDF for signing: $e'), backgroundColor: colorScheme.error),
-          );
-        }
-        return;
-      }
-
-      if (coords == null) return; // User cancelled signature placement
 
       final success = await docProvider.signDocument(
         id: documentId,
         isVdg: false,
-        x: coords['x'],
-        y: coords['y'],
-        width: coords['width'],
-        height: coords['height'],
-        page: coords['page'],
       );
+
+      if (mounted) Navigator.pop(context); // Dismiss loading spinner
 
       if (success) {
         messenger.showSnackBar(
